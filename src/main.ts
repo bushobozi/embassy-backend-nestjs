@@ -15,4 +15,4 @@ async function bootstrap() {
   SwaggerModule.setup('api/swagger_docs/embassy', app, document);
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+void bootstrap();
