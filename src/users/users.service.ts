@@ -42,17 +42,9 @@ export class UsersService {
       updated_at: new Date(),
     },
   ];
-
-  /**
-   * Get all users
-   */
   findAll() {
     return this.users;
   }
-
-  /**
-   * Get a user by ID
-   */
   findOne(id: string) {
     const user = this.users.find((user) => user.id === id);
     if (!user) {
@@ -60,10 +52,6 @@ export class UsersService {
     }
     return user;
   }
-
-  /**
-   * Create a new user
-   */
   create(createUserDto: CreateUserDto) {
     const newUser = {
       id: randomUUID(),
@@ -74,10 +62,6 @@ export class UsersService {
     this.users.push(newUser);
     return newUser;
   }
-
-  /**
-   * Get a user by email
-   */
   findByEmail(email: string) {
     const user = this.users.find((user) => user.email === email);
     if (!user) {
@@ -85,38 +69,18 @@ export class UsersService {
     }
     return user;
   }
-
-  /**
-   * Get users by embassy ID
-   */
   findByEmbassy(embassyId: number) {
     return this.users.filter((user) => user.embassy_id === embassyId);
   }
-
-  /**
-   * Get users by role
-   */
   findByRole(role: string) {
     return this.users.filter((user) => user.role === role);
   }
-
-  /**
-   * Get active users
-   */
   findActive() {
     return this.users.filter((user) => user.is_active);
   }
-
-  /**
-   * Get users by department
-   */
   findByDepartment(department: string) {
     return this.users.filter((user) => user.department === department);
   }
-
-  /**
-   * Update a user
-   */
   update(id: string, updateUserDto: UpdateUserDto) {
     const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
@@ -132,10 +96,6 @@ export class UsersService {
     this.users[userIndex] = updatedUser;
     return updatedUser;
   }
-
-  /**
-   * Delete a user
-   */
   remove(id: string) {
     const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
@@ -146,24 +106,12 @@ export class UsersService {
     this.users.splice(userIndex, 1);
     return deletedUser;
   }
-
-  /**
-   * Deactivate a user (soft delete)
-   */
   deactivate(id: string) {
     return this.update(id, { is_active: false });
   }
-
-  /**
-   * Activate a user
-   */
   activate(id: string) {
     return this.update(id, { is_active: true });
   }
-
-  /**
-   * Get user statistics
-   */
   getStats() {
     const total = this.users.length;
     const active = this.users.filter((user) => user.is_active).length;

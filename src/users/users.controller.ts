@@ -19,11 +19,10 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/CreateUser.dto';
-import { UpdateUserDto } from './dto/UpdateUser.dto';
+import { CreateUserDto, UpdateUserDto } from './export-users';
 
 @ApiTags('Embassy Users')
-@Controller('Embassy Users')
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
