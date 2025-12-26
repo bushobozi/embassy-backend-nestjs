@@ -6,7 +6,7 @@ export class QueryEventsDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
     example: 1,
-    type: String,
+    type: Number,
   })
   @IsOptional()
   @Type(() => Number)
@@ -22,7 +22,7 @@ export class QueryEventsDto {
   @Transform(({ value }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    return value;
+    return value as boolean;
   })
   @IsBoolean()
   is_active?: boolean;
@@ -36,7 +36,7 @@ export class QueryEventsDto {
   @Transform(({ value }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    return value;
+    return value as boolean;
   })
   @IsBoolean()
   is_virtual?: boolean;
@@ -50,7 +50,7 @@ export class QueryEventsDto {
   @Transform(({ value }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    return value;
+    return value as boolean;
   })
   @IsBoolean()
   is_paid?: boolean;
@@ -64,7 +64,7 @@ export class QueryEventsDto {
   @Transform(({ value }) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    return value;
+    return value as boolean;
   })
   @IsBoolean()
   is_public?: boolean;
