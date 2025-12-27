@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Users and Authentication
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  first_name    String?
+  last_name     String?
+  role          String   @default("user") // super_admin, admin, user, staff
+  is_active     Boolean  @default(true)
+  refresh_token String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  created_events       Event[]          @relation("EventCreator")
+  created_publications Publication[]    @relation("PublicationCreator")
+  assigned_tasks       Task[]           @relation("AssignedTasks")
+  created_tasks        Task[]           @relation("CreatedTasks")
+  staff_profile        Staff?
+  sent_emails          Email[]          @relation("EmailSender")
+  received_emails      EmailRecipient[]
+  chatroom_memberships ChatroomMember[]
+  chat_messages        ChatMessage[]
+  notifications        Notification[]
+
+  @@map("users")
+}
+
+// Embassy
+model Embassy {
+  id         String   @id @default(uuid())
+  name       String
+  country    String
+  city       String
+  address    String?
+  phone      String?
+  email      String?
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  events       Event[]
+  publications Publication[]
+  tasks        Task[]
+  staff        Staff[]
+  chatrooms    Chatroom[]
+  emails       Email[]
+
+  @@map("embassies")
+}
+
+// Events
+model Event {
+  id          String   @id @default(uuid())
+  embassy_id  String
+  title       String
+  description String?
+  event_date  DateTime
+  location    String?
+  is_active   Boolean  @default(true)
+  is_virtual  Boolean  @default(false)
+  is_paid     Boolean  @default(false)
+  is_public   Boolean  @default(true)
+  event_type  String?
+  created_by  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  embassy Embassy @relation(fields: [embassy_id], references: [id])
+  creator User    @relation("EventCreator", fields: [created_by], references: [id])
+
+  @@map("events")
+}
+
+// Publications
+model Publication {
+  id               String    @id @default(uuid())
+  embassy_id       String
+  title            String
+  content          String
+  publication_type String?
+  status           String    @default("draft") // draft, published, archived
+  published_at     DateTime?
+  created_by       String
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  // Relations
+  embassy Embassy @relation(fields: [embassy_id], references: [id])
+  creator User    @relation("PublicationCreator", fields: [created_by], references: [id])
+
+  @@map("publications")
+}
+
+// Tasks
+model Task {
+  id           String    @id @default(uuid())
+  embassy_id   String
+  title        String
+  description  String?
+  assigned_to  String
+  created_by   String
+  status       String    @default("pending") // pending, in_progress, completed
+  priority     String    @default("medium") // low, medium, high
+  is_urgent    Boolean   @default(false)
+  due_date     DateTime?
+  completed_at DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  embassy       Embassy @relation(fields: [embassy_id], references: [id])
+  assigned_user User    @relation("AssignedTasks", fields: [assigned_to], references: [id])
+  creator       User    @relation("CreatedTasks", fields: [created_by], references: [id])
+
+  @@map("tasks")
+}
+
+// Staff
+model Staff {
+  id             String    @id @default(uuid())
+  user_id        String    @unique
+  embassy_id     String
+  first_name     String
+  last_name      String
+  email          String    @unique
+  phone          String?
+  position       String?
+  department     String?
+  gender         String?
+  religion       String?
+  marital_status String?
+  country        String?
+  nationality    String?
+  staff_status   String    @default("active") // active, inactive, on_leave, retired
+  hire_date      DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [user_id], references: [id])
+  embassy Embassy @relation(fields: [embassy_id], references: [id])
+
+  @@map("staff")
+}
+
+// Chatrooms
+model Chatroom {
+  id          String   @id @default(uuid())
+  embassy_id  String
+  name        String
+  description String?
+  created_by  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  embassy  Embassy          @relation(fields: [embassy_id], references: [id])
+  members  ChatroomMember[]
+  messages ChatMessage[]
+
+  @@map("chatrooms")
+}
+
+model ChatroomMember {
+  id          String   @id @default(uuid())
+  chatroom_id String
+  user_id     String
+  joined_at   DateTime @default(now())
+
+  // Relations
+  chatroom Chatroom @relation(fields: [chatroom_id], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [user_id], references: [id])
+
+  @@unique([chatroom_id, user_id])
+  @@map("chatroom_members")
+}
+
+model ChatMessage {
+  id          String   @id @default(uuid())
+  chatroom_id String
+  sender_id   String
+  content     String
+  attachments String[] @default([])
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  chatroom Chatroom @relation(fields: [chatroom_id], references: [id], onDelete: Cascade)
+  sender   User     @relation(fields: [sender_id], references: [id])
+
+  @@map("chat_messages")
+}
+
+// Emails
+model Email {
+  id           String    @id @default(uuid())
+  embassy_id   String
+  sender_id    String
+  subject      String
+  content      String
+  attachments  String[]  @default([])
+  status       String    @default("draft") // draft, sent, read, archived, deleted, scheduled
+  scheduled_at DateTime?
+  sent_at      DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  embassy    Embassy          @relation(fields: [embassy_id], references: [id])
+  sender     User             @relation("EmailSender", fields: [sender_id], references: [id])
+  recipients EmailRecipient[]
+
+  @@map("emails")
+}
+
+model EmailRecipient {
+  id       String    @id @default(uuid())
+  email_id String
+  user_id  String
+  is_read  Boolean   @default(false)
+  read_at  DateTime?
+
+  // Relations
+  email Email @relation(fields: [email_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id])
+
+  @@unique([email_id, user_id])
+  @@map("email_recipients")
+}
+
+// Notifications
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  title      String
+  message    String
+  type       String // chat, email, system, alert
+  link       String?
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("notifications")
+}

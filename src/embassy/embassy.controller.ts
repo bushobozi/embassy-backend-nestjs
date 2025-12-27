@@ -17,10 +17,12 @@ import {
 import { CreateEmbassyDto, UpdateEmbassyDto } from './export-embassy';
 import { EmbassyService } from './embassy.service';
 import type { UUID } from 'crypto';
-import { ApiConsumes } from '@nestjs/swagger';
+import { ApiConsumes, ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
 
+@ApiTags('Embassy')
+@ApiBearerAuth('JWT-auth')
 @Controller('embassy')
 export class EmbassyController {
   constructor(private readonly embassyService: EmbassyService) {}

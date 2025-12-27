@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import {
   CreateEventDto,
@@ -20,6 +20,7 @@ import {
 } from './export-events';
 
 @ApiTags('Events')
+@ApiBearerAuth('JWT-auth')
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
