@@ -1,6 +1,9 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "users" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "first_name" TEXT,
@@ -16,7 +19,7 @@ CREATE TABLE "users" (
 
 -- CreateTable
 CREATE TABLE "embassies" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "country" TEXT NOT NULL,
     "city" TEXT NOT NULL,
@@ -32,8 +35,8 @@ CREATE TABLE "embassies" (
 
 -- CreateTable
 CREATE TABLE "events" (
-    "id" SERIAL NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "embassy_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "event_date" TIMESTAMP(3) NOT NULL,
@@ -43,7 +46,7 @@ CREATE TABLE "events" (
     "is_paid" BOOLEAN NOT NULL DEFAULT false,
     "is_public" BOOLEAN NOT NULL DEFAULT true,
     "event_type" TEXT,
-    "created_by" INTEGER NOT NULL,
+    "created_by" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -52,14 +55,14 @@ CREATE TABLE "events" (
 
 -- CreateTable
 CREATE TABLE "publications" (
-    "id" SERIAL NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "embassy_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "publication_type" TEXT,
     "status" TEXT NOT NULL DEFAULT 'draft',
     "published_at" TIMESTAMP(3),
-    "created_by" INTEGER NOT NULL,
+    "created_by" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -68,12 +71,12 @@ CREATE TABLE "publications" (
 
 -- CreateTable
 CREATE TABLE "tasks" (
-    "id" SERIAL NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "embassy_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
-    "assigned_to" INTEGER NOT NULL,
-    "created_by" INTEGER NOT NULL,
+    "assigned_to" TEXT NOT NULL,
+    "created_by" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'pending',
     "priority" TEXT NOT NULL DEFAULT 'medium',
     "is_urgent" BOOLEAN NOT NULL DEFAULT false,
@@ -87,9 +90,9 @@ CREATE TABLE "tasks" (
 
 -- CreateTable
 CREATE TABLE "staff" (
-    "id" SERIAL NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "embassy_id" TEXT NOT NULL,
     "first_name" TEXT NOT NULL,
     "last_name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -112,10 +115,10 @@ CREATE TABLE "staff" (
 -- CreateTable
 CREATE TABLE "chatrooms" (
     "id" TEXT NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
+    "embassy_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "created_by" INTEGER NOT NULL,
+    "created_by" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -124,9 +127,9 @@ CREATE TABLE "chatrooms" (
 
 -- CreateTable
 CREATE TABLE "chatroom_members" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "chatroom_id" TEXT NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "joined_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "chatroom_members_pkey" PRIMARY KEY ("id")
@@ -136,7 +139,7 @@ CREATE TABLE "chatroom_members" (
 CREATE TABLE "chat_messages" (
     "id" TEXT NOT NULL,
     "chatroom_id" TEXT NOT NULL,
-    "sender_id" INTEGER NOT NULL,
+    "sender_id" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "attachments" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "is_read" BOOLEAN NOT NULL DEFAULT false,
@@ -149,8 +152,8 @@ CREATE TABLE "chat_messages" (
 -- CreateTable
 CREATE TABLE "emails" (
     "id" TEXT NOT NULL,
-    "embassy_id" INTEGER NOT NULL,
-    "sender_id" INTEGER NOT NULL,
+    "embassy_id" TEXT NOT NULL,
+    "sender_id" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "attachments" TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -165,9 +168,9 @@ CREATE TABLE "emails" (
 
 -- CreateTable
 CREATE TABLE "email_recipients" (
-    "id" SERIAL NOT NULL,
+    "id" TEXT NOT NULL,
     "email_id" TEXT NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "is_read" BOOLEAN NOT NULL DEFAULT false,
     "read_at" TIMESTAMP(3),
 
@@ -177,7 +180,7 @@ CREATE TABLE "email_recipients" (
 -- CreateTable
 CREATE TABLE "notifications" (
     "id" TEXT NOT NULL,
-    "user_id" INTEGER NOT NULL,
+    "user_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "type" TEXT NOT NULL,
@@ -260,3 +263,4 @@ ALTER TABLE "email_recipients" ADD CONSTRAINT "email_recipients_user_id_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+

@@ -35,22 +35,29 @@ async function main() {
 
   console.log('Super user created:', superUser.email);
 
-  // Create a sample embassy
-  const embassy = await prisma.embassy.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      name: 'Main Embassy',
-      country: 'Uganda',
-      city: 'Kampala',
-      address: 'Main Street, Kampala',
-      phone: '+256-XXX-XXXXXX',
-      email: 'main@embassy.gov',
-      is_active: true,
-    },
+  // Create a sample embassy (only if it doesn't exist)
+  const existingEmbassy = await prisma.embassy.findFirst({
+    where: { name: 'Main Embassy' },
   });
 
-  console.log('Sample embassy created:', embassy.name);
+  let embassy;
+  if (!existingEmbassy) {
+    embassy = await prisma.embassy.create({
+      data: {
+        name: 'Main Embassy',
+        country: 'Uganda',
+        city: 'Kampala',
+        address: 'Main Street, Kampala',
+        phone: '+256-XXX-XXXXXX',
+        email: 'main@embassy.gov',
+        is_active: true,
+      },
+    });
+    console.log('Sample embassy created:', embassy.name);
+  } else {
+    embassy = existingEmbassy;
+    console.log('Sample embassy already exists:', embassy.name);
+  }
   console.log('✅ Seeding completed successfully!');
 }
 
