@@ -16,11 +16,13 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto, QueryStaffDto } from './export-staff';
 
 @ApiTags('Staff')
+@ApiBearerAuth('JWT-auth')
 @Controller('staff')
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}

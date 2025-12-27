@@ -10,7 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { MessagesService } from './messages.service';
 import {
   CreateChatroomDto,
@@ -21,6 +21,7 @@ import {
 } from './export-messages';
 
 @ApiTags('Messages')
+@ApiBearerAuth('JWT-auth')
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}

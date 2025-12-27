@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { PublicationsService } from './publications.service';
 import {
@@ -25,6 +26,7 @@ import {
 } from './export-publications';
 
 @ApiTags('Publications')
+@ApiBearerAuth('JWT-auth')
 @Controller('publications')
 export class PublicationsController {
   constructor(private readonly publicationsService: PublicationsService) {}
