@@ -7,73 +7,71 @@ import * as bcrypt from 'bcryptjs';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  // Reusable select object for all user fields
+  private readonly userSelect = {
+    id: true,
+    email: true,
+    first_name: true,
+    middle_name: true,
+    last_name: true,
+    role: true,
+    is_active: true,
+    phone_number: true,
+    work_phone_number: true,
+    work_email: true,
+    address: true,
+    date_of_birth: true,
+    biography: true,
+    emergency_contact_name: true,
+    emergency_contact_phone_number: true,
+    emergency_contact_relationship: true,
+    department: true,
+    position: true,
+    hire_date: true,
+    profile_picture: true,
+    languages: true,
+    certifications: true,
+    previous_employers: true,
+    education: true,
+    social_media_links: true,
+    created_at: true,
+    updated_at: true,
+    staff_profile: {
+      select: {
+        embassy_id: true,
+      },
+    },
+  };
+
   async findAll() {
     const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
     // Map to include embassy_id from staff profile
-    return users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      embassy_id: user.staff_profile?.embassy_id || null,
-    }));
+    return users.map((user) => {
+      const { staff_profile, ...userData } = user;
+      return {
+        ...userData,
+        embassy_id: (staff_profile?.embassy_id as string) || null,
+      };
+    });
   }
 
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
+    const { staff_profile, ...userData } = user;
     return {
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      embassy_id: user.staff_profile?.embassy_id || null,
+      ...userData,
+      embassy_id: (staff_profile?.embassy_id as string) || null,
     };
   }
 
@@ -81,23 +79,70 @@ export class UsersService {
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-    // Only map fields that exist in the User schema
+    // Map all fields from DTO to schema
     const user = await this.prisma.user.create({
       data: {
         email: createUserDto.email,
         password: hashedPassword,
         first_name: createUserDto.first_name,
+        middle_name: createUserDto.middle_name,
         last_name: createUserDto.last_name,
         role: createUserDto.role || 'user',
         is_active: createUserDto.is_active ?? true,
+        phone_number: createUserDto.phone_number,
+        work_phone_number: createUserDto.work_phone_number,
+        work_email: createUserDto.work_email,
+        address: createUserDto.address,
+        date_of_birth: createUserDto.date_of_birth
+          ? createUserDto.date_of_birth.toString()
+          : null,
+        biography: createUserDto.biography,
+        emergency_contact_name: createUserDto.emergency_contact_name,
+        emergency_contact_phone_number:
+          createUserDto.emergency_contact_phone_number,
+        emergency_contact_relationship:
+          createUserDto.emergency_contact_relationship,
+        department: createUserDto.department,
+        position: createUserDto.position,
+        hire_date: createUserDto.hire_date
+          ? new Date(createUserDto.hire_date)
+          : null,
+        profile_picture: createUserDto.profile_picture,
+        languages: createUserDto.languages || [],
+        certifications: createUserDto.certifications || [],
+        previous_employers: createUserDto.previous_employers || [],
+        education: createUserDto.education || [],
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        social_media_links: createUserDto.social_media_links
+          ? (createUserDto.social_media_links as any)
+          : undefined,
       },
       select: {
         id: true,
         email: true,
         first_name: true,
+        middle_name: true,
         last_name: true,
         role: true,
         is_active: true,
+        phone_number: true,
+        work_phone_number: true,
+        work_email: true,
+        address: true,
+        date_of_birth: true,
+        biography: true,
+        emergency_contact_name: true,
+        emergency_contact_phone_number: true,
+        emergency_contact_relationship: true,
+        department: true,
+        position: true,
+        hire_date: true,
+        profile_picture: true,
+        languages: true,
+        certifications: true,
+        previous_employers: true,
+        education: true,
+        social_media_links: true,
         created_at: true,
         updated_at: true,
       },
@@ -109,37 +154,17 @@ export class UsersService {
   async findByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
+    const { staff_profile, ...userData } = user;
     return {
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      embassy_id: user.staff_profile?.embassy_id || null,
+      ...userData,
+      embassy_id: (staff_profile?.embassy_id as string) || null,
     };
   }
 
@@ -174,67 +199,31 @@ export class UsersService {
   async findByRole(role: string) {
     const users = await this.prisma.user.findMany({
       where: { role },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
-    return users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      embassy_id: user.staff_profile?.embassy_id || null,
-    }));
+    return users.map((user) => {
+      const { staff_profile, ...userData } = user;
+      return {
+        ...userData,
+        embassy_id: (staff_profile?.embassy_id as string) || null,
+      };
+    });
   }
 
   async findActive() {
     const users = await this.prisma.user.findMany({
       where: { is_active: true },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
-    return users.map((user) => ({
-      id: user.id,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      role: user.role,
-      is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      embassy_id: user.staff_profile?.embassy_id || null,
-    }));
+    return users.map((user) => {
+      const { staff_profile, ...userData } = user;
+      return {
+        ...userData,
+        embassy_id: (staff_profile?.embassy_id as string) || null,
+      };
+    });
   }
 
   async findByDepartment(department: string) {
@@ -266,27 +255,61 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    // Check if user exists
     await this.findOne(id);
+    const dataToUpdate: Partial<CreateUserDto> = {};
 
-    // Only map fields that exist in the User schema
-    const dataToUpdate: any = {};
-
-    if (updateUserDto.email !== undefined) {
+    // Map all updatable fields
+    if (updateUserDto.email !== undefined)
       dataToUpdate.email = updateUserDto.email;
-    }
-    if (updateUserDto.first_name !== undefined) {
+    if (updateUserDto.first_name !== undefined)
       dataToUpdate.first_name = updateUserDto.first_name;
-    }
-    if (updateUserDto.last_name !== undefined) {
+    if (updateUserDto.middle_name !== undefined)
+      dataToUpdate.middle_name = updateUserDto.middle_name;
+    if (updateUserDto.last_name !== undefined)
       dataToUpdate.last_name = updateUserDto.last_name;
-    }
-    if (updateUserDto.role !== undefined) {
+    if (updateUserDto.role !== undefined)
       dataToUpdate.role = updateUserDto.role;
-    }
-    if (updateUserDto.is_active !== undefined) {
+    if (updateUserDto.is_active !== undefined)
       dataToUpdate.is_active = updateUserDto.is_active;
-    }
+    if (updateUserDto.phone_number !== undefined)
+      dataToUpdate.phone_number = updateUserDto.phone_number;
+    if (updateUserDto.work_phone_number !== undefined)
+      dataToUpdate.work_phone_number = updateUserDto.work_phone_number;
+    if (updateUserDto.work_email !== undefined)
+      dataToUpdate.work_email = updateUserDto.work_email;
+    if (updateUserDto.address !== undefined)
+      dataToUpdate.address = updateUserDto.address;
+    if (updateUserDto.date_of_birth !== undefined)
+      dataToUpdate.date_of_birth = new Date(updateUserDto.date_of_birth);
+    if (updateUserDto.biography !== undefined)
+      dataToUpdate.biography = updateUserDto.biography;
+    if (updateUserDto.emergency_contact_name !== undefined)
+      dataToUpdate.emergency_contact_name =
+        updateUserDto.emergency_contact_name;
+    if (updateUserDto.emergency_contact_phone_number !== undefined)
+      dataToUpdate.emergency_contact_phone_number =
+        updateUserDto.emergency_contact_phone_number;
+    if (updateUserDto.emergency_contact_relationship !== undefined)
+      dataToUpdate.emergency_contact_relationship =
+        updateUserDto.emergency_contact_relationship;
+    if (updateUserDto.department !== undefined)
+      dataToUpdate.department = updateUserDto.department;
+    if (updateUserDto.position !== undefined)
+      dataToUpdate.position = updateUserDto.position;
+    if (updateUserDto.hire_date !== undefined)
+      dataToUpdate.hire_date = new Date(updateUserDto.hire_date);
+    if (updateUserDto.profile_picture !== undefined)
+      dataToUpdate.profile_picture = updateUserDto.profile_picture;
+    if (updateUserDto.languages !== undefined)
+      dataToUpdate.languages = updateUserDto.languages;
+    if (updateUserDto.certifications !== undefined)
+      dataToUpdate.certifications = updateUserDto.certifications;
+    if (updateUserDto.previous_employers !== undefined)
+      dataToUpdate.previous_employers = updateUserDto.previous_employers;
+    if (updateUserDto.education !== undefined)
+      dataToUpdate.education = updateUserDto.education;
+    if (updateUserDto.social_media_links !== undefined)
+      dataToUpdate.social_media_links = updateUserDto.social_media_links;
     if (updateUserDto.password !== undefined) {
       dataToUpdate.password = await bcrypt.hash(updateUserDto.password, 10);
     }
@@ -294,19 +317,14 @@ export class UsersService {
     const user = await this.prisma.user.update({
       where: { id },
       data: dataToUpdate,
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: this.userSelect,
     });
 
-    return user;
+    const { staff_profile, ...userData } = user;
+    return {
+      ...userData,
+      embassy_id: (staff_profile?.embassy_id as string) || null,
+    };
   }
 
   async remove(id: string) {
