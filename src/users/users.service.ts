@@ -8,7 +8,7 @@ export class UsersService {
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       select: {
         id: true,
         email: true,
@@ -18,8 +18,26 @@ export class UsersService {
         is_active: true,
         created_at: true,
         updated_at: true,
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
       },
     });
+
+    // Map to include embassy_id from staff profile
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      embassy_id: user.staff_profile?.embassy_id || null,
+    }));
   }
 
   async findOne(id: string) {
@@ -34,23 +52,44 @@ export class UsersService {
         is_active: true,
         created_at: true,
         updated_at: true,
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
       },
     });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return user;
+
+    return {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      embassy_id: user.staff_profile?.embassy_id || null,
+    };
   }
 
   async create(createUserDto: CreateUserDto) {
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+    // Only map fields that exist in the User schema
     const user = await this.prisma.user.create({
       data: {
-        ...createUserDto,
+        email: createUserDto.email,
         password: hashedPassword,
+        first_name: createUserDto.first_name,
+        last_name: createUserDto.last_name,
+        role: createUserDto.role || 'user',
+        is_active: createUserDto.is_active ?? true,
       },
       select: {
         id: true,
@@ -79,20 +118,36 @@ export class UsersService {
         is_active: true,
         created_at: true,
         updated_at: true,
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
       },
     });
 
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
-    return user;
+
+    return {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      embassy_id: user.staff_profile?.embassy_id || null,
+    };
   }
 
-  async findByEmbassy(embassyId: number) {
+  async findByEmbassy(embassyId: string) {
     // Find staff members for this embassy, then get their users
     const staff = await this.prisma.staff.findMany({
       where: {
-        embassy_id: embassyId.toString(),
+        embassy_id: embassyId,
       },
       include: {
         user: {
@@ -110,11 +165,14 @@ export class UsersService {
       },
     });
 
-    return staff.map((s) => s.user);
+    return staff.map((s) => ({
+      ...s.user,
+      embassy_id: s.embassy_id,
+    }));
   }
 
   async findByRole(role: string) {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: { role },
       select: {
         id: true,
@@ -125,12 +183,29 @@ export class UsersService {
         is_active: true,
         created_at: true,
         updated_at: true,
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
       },
     });
+
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      embassy_id: user.staff_profile?.embassy_id || null,
+    }));
   }
 
   async findActive() {
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       where: { is_active: true },
       select: {
         id: true,
@@ -141,8 +216,25 @@ export class UsersService {
         is_active: true,
         created_at: true,
         updated_at: true,
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
       },
     });
+
+    return users.map((user) => ({
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      embassy_id: user.staff_profile?.embassy_id || null,
+    }));
   }
 
   async findByDepartment(department: string) {
@@ -167,16 +259,35 @@ export class UsersService {
       },
     });
 
-    return staff.map((s) => s.user);
+    return staff.map((s) => ({
+      ...s.user,
+      embassy_id: s.embassy_id,
+    }));
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     // Check if user exists
     await this.findOne(id);
 
-    // If password is being updated, hash it
-    const dataToUpdate: any = { ...updateUserDto };
-    if (updateUserDto.password) {
+    // Only map fields that exist in the User schema
+    const dataToUpdate: any = {};
+
+    if (updateUserDto.email !== undefined) {
+      dataToUpdate.email = updateUserDto.email;
+    }
+    if (updateUserDto.first_name !== undefined) {
+      dataToUpdate.first_name = updateUserDto.first_name;
+    }
+    if (updateUserDto.last_name !== undefined) {
+      dataToUpdate.last_name = updateUserDto.last_name;
+    }
+    if (updateUserDto.role !== undefined) {
+      dataToUpdate.role = updateUserDto.role;
+    }
+    if (updateUserDto.is_active !== undefined) {
+      dataToUpdate.is_active = updateUserDto.is_active;
+    }
+    if (updateUserDto.password !== undefined) {
       dataToUpdate.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 

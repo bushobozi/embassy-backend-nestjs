@@ -68,7 +68,7 @@ export class UsersController {
     @Query('active') active?: string,
   ) {
     if (embassyId) {
-      return this.usersService.findByEmbassy(parseInt(embassyId));
+      return this.usersService.findByEmbassy(embassyId);
     }
     if (role) {
       return this.usersService.findByRole(role);
