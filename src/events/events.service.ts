@@ -4,85 +4,78 @@ import {
   UpdateEventDto,
   QueryEventsDto,
 } from './export-events';
-import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class EventsService {
-  private events: Array<
-    CreateEventDto & { id: string; created_at: Date; updated_at: Date }
-  > = [
-    {
-      id: randomUUID(),
-      event_name: 'Sample Event',
-      event_description: 'This is a sample event description.',
-      event_start_date: new Date('2024-10-01T10:00:00Z'),
-      event_end_date: new Date('2024-10-01T12:00:00Z'),
-      event_location: '123 Sample St, Sample City',
-      event_type: 'seminar',
-      is_virtual: false,
-      is_active: true,
-      is_public: true,
-      is_private: false,
-      is_paid: false,
-      event_cost: 0,
-      max_attendees: 50,
-      registration_deadline: new Date('2024-09-25T23:59:59Z'),
-      embassy_id: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ];
-  findAll(queryParams?: QueryEventsDto) {
-    let filteredEvents = this.events;
+  constructor(private prisma: PrismaService) {}
+
+  async findAll(queryParams?: QueryEventsDto) {
+    // Build the where clause based on query parameters
+    const where: any = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.embassy_id === queryParams.embassy_id,
-        );
+        where.embassy_id = queryParams.embassy_id.toString();
       }
 
       if (queryParams.is_active !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.is_active === queryParams.is_active,
-        );
+        where.is_active = queryParams.is_active;
       }
 
       if (queryParams.is_virtual !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.is_virtual === queryParams.is_virtual,
-        );
+        where.is_virtual = queryParams.is_virtual;
       }
 
       if (queryParams.is_paid !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.is_paid === queryParams.is_paid,
-        );
+        where.is_paid = queryParams.is_paid;
       }
 
       if (queryParams.is_public !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.is_public === queryParams.is_public,
-        );
+        where.is_public = queryParams.is_public;
       }
 
       if (queryParams.event_type !== undefined) {
-        filteredEvents = filteredEvents.filter(
-          (event) => event.event_type === queryParams.event_type,
-        );
+        where.event_type = queryParams.event_type;
       }
     }
 
     const page = Number(queryParams?.page) || 1;
     const limit = Number(queryParams?.limit) || 25;
-    const total = filteredEvents.length;
-    const totalPages = Math.ceil(total / limit);
     const skip = (page - 1) * limit;
 
-    const paginatedEvents = filteredEvents.slice(skip, skip + limit);
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        select: {
+          id: true,
+          embassy_id: true,
+          title: true,
+          description: true,
+          event_date: true,
+          location: true,
+          is_active: true,
+          is_virtual: true,
+          is_paid: true,
+          is_public: true,
+          event_type: true,
+          created_by: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
+      this.prisma.event.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return {
-      data: paginatedEvents,
+      data: events,
       meta: {
         total,
         page,
@@ -91,69 +84,177 @@ export class EventsService {
       },
     };
   }
-  findOne(id: string) {
-    const event = this.events.find((event) => event.id === id);
+
+  async findOne(id: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        event_date: true,
+        location: true,
+        is_active: true,
+        is_virtual: true,
+        is_paid: true,
+        is_public: true,
+        event_type: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!event) {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
     return event;
   }
-  create(createEventDto: CreateEventDto) {
-    const newEvent = {
-      id: randomUUID(),
-      ...createEventDto,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.events.push(newEvent);
-    return newEvent;
+
+  async create(createEventDto: CreateEventDto, created_by: string) {
+    // Map DTO fields to schema fields
+    const event = await this.prisma.event.create({
+      data: {
+        embassy_id: createEventDto.embassy_id.toString(),
+        title: createEventDto.event_name,
+        description: createEventDto.event_description,
+        event_date: createEventDto.event_start_date,
+        location: createEventDto.event_location,
+        is_active: createEventDto.is_active,
+        is_virtual: createEventDto.is_virtual,
+        is_paid: createEventDto.is_paid,
+        is_public: createEventDto.is_public,
+        event_type: createEventDto.event_type,
+        created_by,
+      },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        event_date: true,
+        location: true,
+        is_active: true,
+        is_virtual: true,
+        is_paid: true,
+        is_public: true,
+        event_type: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return event;
   }
-  update(id: string, updateEventDto: Partial<UpdateEventDto>) {
-    const eventIndex = this.events.findIndex((event) => event.id === id);
-    if (eventIndex === -1) {
-      throw new NotFoundException(`Event with ID ${id} not found`);
+
+  async update(id: string, updateEventDto: Partial<UpdateEventDto>) {
+    // Check if event exists
+    await this.findOne(id);
+
+    // Map DTO fields to schema fields if they exist
+    const dataToUpdate: any = {};
+
+    if (updateEventDto.event_name !== undefined) {
+      dataToUpdate.title = updateEventDto.event_name;
+    }
+    if (updateEventDto.event_description !== undefined) {
+      dataToUpdate.description = updateEventDto.event_description;
+    }
+    if (updateEventDto.event_start_date !== undefined) {
+      dataToUpdate.event_date = updateEventDto.event_start_date;
+    }
+    if (updateEventDto.event_location !== undefined) {
+      dataToUpdate.location = updateEventDto.event_location;
+    }
+    if (updateEventDto.is_active !== undefined) {
+      dataToUpdate.is_active = updateEventDto.is_active;
+    }
+    if (updateEventDto.is_virtual !== undefined) {
+      dataToUpdate.is_virtual = updateEventDto.is_virtual;
+    }
+    if (updateEventDto.is_paid !== undefined) {
+      dataToUpdate.is_paid = updateEventDto.is_paid;
+    }
+    if (updateEventDto.is_public !== undefined) {
+      dataToUpdate.is_public = updateEventDto.is_public;
+    }
+    if (updateEventDto.event_type !== undefined) {
+      dataToUpdate.event_type = updateEventDto.event_type;
+    }
+    if (updateEventDto.embassy_id !== undefined) {
+      dataToUpdate.embassy_id = updateEventDto.embassy_id.toString();
     }
 
-    const updatedEvent = {
-      ...this.events[eventIndex],
-      ...updateEventDto,
-      updated_at: new Date(),
-    };
+    const event = await this.prisma.event.update({
+      where: { id },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        event_date: true,
+        location: true,
+        is_active: true,
+        is_virtual: true,
+        is_paid: true,
+        is_public: true,
+        event_type: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
 
-    this.events[eventIndex] = updatedEvent;
-    return updatedEvent;
+    return event;
   }
-  remove(id: string) {
-    const eventIndex = this.events.findIndex((event) => event.id === id);
-    if (eventIndex === -1) {
-      throw new NotFoundException(`Event with ID ${id} not found`);
-    }
-    const deletedEvent = this.events[eventIndex];
-    this.events.splice(eventIndex, 1);
-    return deletedEvent;
+
+  async remove(id: string) {
+    // Check if event exists
+    await this.findOne(id);
+
+    return this.prisma.event.delete({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        event_date: true,
+        location: true,
+      },
+    });
   }
-  deactivate(id: string) {
+
+  async deactivate(id: string) {
     return this.update(id, { is_active: false });
   }
-  activate(id: string) {
+
+  async activate(id: string) {
     return this.update(id, { is_active: true });
   }
-  getStats(embassy_id?: number) {
-    let events = this.events;
+
+  async getStats(embassy_id?: number) {
+    const where: any = {};
 
     if (embassy_id !== undefined) {
-      events = events.filter((event) => event.embassy_id === embassy_id);
+      where.embassy_id = embassy_id.toString();
     }
 
-    const total = events.length;
-    const active = events.filter((event) => event.is_active).length;
+    const [total, active, virtual, paid, publicEvents] = await Promise.all([
+      this.prisma.event.count({ where }),
+      this.prisma.event.count({ where: { ...where, is_active: true } }),
+      this.prisma.event.count({ where: { ...where, is_virtual: true } }),
+      this.prisma.event.count({ where: { ...where, is_paid: true } }),
+      this.prisma.event.count({ where: { ...where, is_public: true } }),
+    ]);
+
     const inactive = total - active;
-    const virtual = events.filter((event) => event.is_virtual).length;
     const inPerson = total - virtual;
-    const paid = events.filter((event) => event.is_paid).length;
     const free = total - paid;
-    const publicEvents = events.filter((event) => event.is_public).length;
-    const privateEvents = events.filter((event) => event.is_private).length;
+    const privateEvents = total - publicEvents;
 
     return {
       total,

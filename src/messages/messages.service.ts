@@ -6,220 +6,312 @@ import {
   CreateNotificationDto,
   QueryEmailsDto,
 } from './export-messages';
-import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MessagesService {
-  // In-memory storage (replace with database in production)
-  private chatrooms: Array<
-    CreateChatroomDto & { id: string; created_at: Date; updated_at: Date }
-  > = [];
-
-  private chatMessages: Array<
-    CreateChatMessageDto & {
-      id: string;
-      is_read: boolean;
-      created_at: Date;
-      updated_at: Date;
-    }
-  > = [];
-
-  private emails: Array<
-    CreateEmailDto & {
-      id: string;
-      is_read: boolean;
-      read_at?: Date;
-      sent_at?: Date;
-      created_at: Date;
-      updated_at: Date;
-    }
-  > = [];
-
-  private notifications: Array<
-    CreateNotificationDto & { id: string; created_at: Date }
-  > = [];
+  constructor(private prisma: PrismaService) {}
 
   // ==================== CHATROOMS ====================
 
-  createChatroom(createChatroomDto: CreateChatroomDto) {
-    const newChatroom = {
-      id: randomUUID(),
-      ...createChatroomDto,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.chatrooms.push(newChatroom);
-    return newChatroom;
+  async createChatroom(createChatroomDto: CreateChatroomDto) {
+    const { member_ids, created_by, embassy_id, ...chatroomData } =
+      createChatroomDto;
+
+    // Create chatroom with members
+    const chatroom = await this.prisma.chatroom.create({
+      data: {
+        ...chatroomData,
+        embassy_id: embassy_id.toString(),
+        created_by: created_by.toString(),
+        members: {
+          create: member_ids.map((userId) => ({
+            user_id: userId.toString(),
+          })),
+        },
+      },
+      include: {
+        members: {
+          select: {
+            user_id: true,
+          },
+        },
+      },
+    });
+
+    return chatroom;
   }
 
-  findAllChatrooms(embassy_id?: number, user_id?: number) {
-    let filtered = this.chatrooms;
+  async findAllChatrooms(embassy_id?: number, user_id?: number) {
+    const where: any = {};
 
     if (embassy_id !== undefined) {
-      filtered = filtered.filter((room) => room.embassy_id === embassy_id);
+      where.embassy_id = embassy_id.toString();
     }
 
     if (user_id !== undefined) {
-      filtered = filtered.filter((room) => room.member_ids.includes(user_id));
+      where.members = {
+        some: {
+          user_id: user_id.toString(),
+        },
+      };
     }
 
-    return filtered;
+    return this.prisma.chatroom.findMany({
+      where,
+      include: {
+        members: {
+          select: {
+            user_id: true,
+          },
+        },
+      },
+      orderBy: {
+        updated_at: 'desc',
+      },
+    });
   }
 
-  findChatroom(id: string) {
-    const chatroom = this.chatrooms.find((room) => room.id === id);
+  async findChatroom(id: string) {
+    const chatroom = await this.prisma.chatroom.findUnique({
+      where: { id },
+      include: {
+        members: {
+          select: {
+            user_id: true,
+          },
+        },
+      },
+    });
+
     if (!chatroom) {
       throw new NotFoundException(`Chatroom with ID ${id} not found`);
     }
     return chatroom;
   }
 
-  addMemberToChatroom(chatroomId: string, userId: number) {
-    const chatroom = this.findChatroom(chatroomId);
-    if (!chatroom.member_ids.includes(userId)) {
-      chatroom.member_ids.push(userId);
-      chatroom.updated_at = new Date();
+  async addMemberToChatroom(chatroomId: string, userId: number) {
+    // Check if chatroom exists
+    await this.findChatroom(chatroomId);
+
+    // Check if member already exists
+    const existingMember = await this.prisma.chatroomMember.findUnique({
+      where: {
+        chatroom_id_user_id: {
+          chatroom_id: chatroomId,
+          user_id: userId.toString(),
+        },
+      },
+    });
+
+    if (!existingMember) {
+      await this.prisma.chatroomMember.create({
+        data: {
+          chatroom_id: chatroomId,
+          user_id: userId.toString(),
+        },
+      });
     }
-    return chatroom;
+
+    // Return updated chatroom
+    return this.findChatroom(chatroomId);
   }
 
-  removeMemberFromChatroom(chatroomId: string, userId: number) {
-    const chatroom = this.findChatroom(chatroomId);
-    chatroom.member_ids = chatroom.member_ids.filter((id) => id !== userId);
-    chatroom.updated_at = new Date();
-    return chatroom;
+  async removeMemberFromChatroom(chatroomId: string, userId: number) {
+    // Check if chatroom exists
+    await this.findChatroom(chatroomId);
+
+    // Delete the member
+    await this.prisma.chatroomMember.deleteMany({
+      where: {
+        chatroom_id: chatroomId,
+        user_id: userId.toString(),
+      },
+    });
+
+    // Return updated chatroom
+    return this.findChatroom(chatroomId);
   }
 
   // ==================== CHAT MESSAGES ====================
 
-  createChatMessage(createChatMessageDto: CreateChatMessageDto) {
+  async createChatMessage(createChatMessageDto: CreateChatMessageDto) {
     // Verify chatroom exists
-    this.findChatroom(createChatMessageDto.chatroom_id);
+    const chatroom = await this.findChatroom(
+      createChatMessageDto.chatroom_id,
+    );
 
-    const newMessage = {
-      id: randomUUID(),
-      ...createChatMessageDto,
-      is_read: false,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.chatMessages.push(newMessage);
+    const newMessage = await this.prisma.chatMessage.create({
+      data: {
+        chatroom_id: createChatMessageDto.chatroom_id,
+        sender_id: createChatMessageDto.sender_id.toString(),
+        content: createChatMessageDto.content,
+        attachments: createChatMessageDto.attachments || [],
+      },
+    });
 
     // Create notifications for chatroom members
-    const chatroom = this.findChatroom(createChatMessageDto.chatroom_id);
-    chatroom.member_ids.forEach((memberId) => {
-      if (memberId !== createChatMessageDto.sender_id) {
-        this.createNotification({
-          user_id: memberId,
-          title: 'New chat message',
-          message: `New message in ${chatroom.name}`,
-          type: 'chat',
-          link: `/chatrooms/${chatroom.id}`,
-          is_read: false,
-        });
-      }
-    });
+    const memberIds = chatroom.members.map((m) => m.user_id);
+    const notificationsToCreate = memberIds
+      .filter((memberId) => memberId !== createChatMessageDto.sender_id.toString())
+      .map((memberId) => ({
+        user_id: memberId,
+        title: 'New chat message',
+        message: `New message in ${chatroom.name}`,
+        type: 'chat',
+        link: `/chatrooms/${chatroom.id}`,
+        is_read: false,
+      }));
+
+    if (notificationsToCreate.length > 0) {
+      await this.prisma.notification.createMany({
+        data: notificationsToCreate,
+      });
+    }
 
     return newMessage;
   }
 
-  findChatMessages(chatroomId: string) {
-    return this.chatMessages
-      .filter((msg) => msg.chatroom_id === chatroomId)
-      .sort((a, b) => a.created_at.getTime() - b.created_at.getTime());
+  async findChatMessages(chatroomId: string) {
+    return this.prisma.chatMessage.findMany({
+      where: { chatroom_id: chatroomId },
+      orderBy: {
+        created_at: 'asc',
+      },
+    });
   }
 
-  markChatMessageAsRead(messageId: string) {
-    const message = this.chatMessages.find((msg) => msg.id === messageId);
+  async markChatMessageAsRead(messageId: string) {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+    });
+
     if (!message) {
       throw new NotFoundException(`Message with ID ${messageId} not found`);
     }
-    message.is_read = true;
-    message.updated_at = new Date();
-    return message;
+
+    return this.prisma.chatMessage.update({
+      where: { id: messageId },
+      data: { is_read: true },
+    });
   }
 
-  deleteChatMessage(messageId: string) {
-    const messageIndex = this.chatMessages.findIndex(
-      (msg) => msg.id === messageId,
-    );
-    if (messageIndex === -1) {
+  async deleteChatMessage(messageId: string) {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
       throw new NotFoundException(`Message with ID ${messageId} not found`);
     }
-    const deletedMessage = this.chatMessages[messageIndex];
-    this.chatMessages.splice(messageIndex, 1);
-    return deletedMessage;
+
+    return this.prisma.chatMessage.delete({
+      where: { id: messageId },
+    });
   }
 
   // ==================== EMAILS ====================
 
-  createEmail(createEmailDto: CreateEmailDto) {
-    const newEmail = {
-      id: randomUUID(),
-      ...createEmailDto,
-      is_read: false,
-      created_at: new Date(),
-      updated_at: new Date(),
-      sent_at: createEmailDto.status === 'sent' ? new Date() : undefined,
-    };
-    this.emails.push(newEmail);
+  async createEmail(createEmailDto: CreateEmailDto) {
+    const { receiver_ids, sender_id, embassy_id, ...emailData } =
+      createEmailDto;
+
+    const newEmail = await this.prisma.email.create({
+      data: {
+        ...emailData,
+        embassy_id: embassy_id.toString(),
+        sender_id: sender_id.toString(),
+        sent_at: createEmailDto.status === 'sent' ? new Date() : null,
+        recipients: {
+          create: receiver_ids.map((receiverId) => ({
+            user_id: receiverId.toString(),
+          })),
+        },
+      },
+      include: {
+        recipients: {
+          select: {
+            user_id: true,
+            is_read: true,
+            read_at: true,
+          },
+        },
+      },
+    });
 
     // Create notifications for recipients if email is sent
     if (createEmailDto.status === 'sent') {
-      createEmailDto.receiver_ids.forEach((receiverId) => {
-        this.createNotification({
-          user_id: receiverId,
-          title: 'New email received',
-          message: `Subject: ${createEmailDto.subject}`,
-          type: 'email',
-          link: `/emails/${newEmail.id}`,
-          is_read: false,
-        });
+      const notificationsToCreate = receiver_ids.map((receiverId) => ({
+        user_id: receiverId.toString(),
+        title: 'New email received',
+        message: `Subject: ${createEmailDto.subject}`,
+        type: 'email',
+        link: `/emails/${newEmail.id}`,
+        is_read: false,
+      }));
+
+      await this.prisma.notification.createMany({
+        data: notificationsToCreate,
       });
     }
 
     return newEmail;
   }
 
-  findAllEmails(queryParams?: QueryEmailsDto) {
-    let filtered = this.emails;
+  async findAllEmails(queryParams?: QueryEmailsDto) {
+    const where: any = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        filtered = filtered.filter(
-          (email) => email.embassy_id === queryParams.embassy_id,
-        );
+        where.embassy_id = queryParams.embassy_id.toString();
       }
 
       if (queryParams.sender_id !== undefined) {
-        filtered = filtered.filter(
-          (email) => email.sender_id === queryParams.sender_id,
-        );
+        where.sender_id = queryParams.sender_id.toString();
       }
 
       if (queryParams.receiver_id !== undefined) {
-        filtered = filtered.filter((email) =>
-          email.receiver_ids.includes(queryParams.receiver_id!),
-        );
+        where.recipients = {
+          some: {
+            user_id: queryParams.receiver_id.toString(),
+          },
+        };
       }
 
       if (queryParams.status !== undefined) {
-        filtered = filtered.filter(
-          (email) => email.status === queryParams.status,
-        );
+        where.status = queryParams.status;
       }
     }
 
     const page = Number(queryParams?.page) || 1;
     const limit = Number(queryParams?.limit) || 25;
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit);
     const skip = (page - 1) * limit;
 
-    const paginatedEmails = filtered.slice(skip, skip + limit);
+    const [emails, total] = await Promise.all([
+      this.prisma.email.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          recipients: {
+            select: {
+              user_id: true,
+              is_read: true,
+              read_at: true,
+            },
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.email.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return {
-      data: paginatedEmails,
+      data: emails,
       meta: {
         total,
         page,
@@ -229,57 +321,109 @@ export class MessagesService {
     };
   }
 
-  findEmail(id: string) {
-    const email = this.emails.find((email) => email.id === id);
+  async findEmail(id: string) {
+    const email = await this.prisma.email.findUnique({
+      where: { id },
+      include: {
+        recipients: {
+          select: {
+            user_id: true,
+            is_read: true,
+            read_at: true,
+          },
+        },
+      },
+    });
+
     if (!email) {
       throw new NotFoundException(`Email with ID ${id} not found`);
     }
     return email;
   }
 
-  updateEmailStatus(id: string, status: string) {
-    const email = this.findEmail(id);
-    email.status = status;
-    email.updated_at = new Date();
+  async updateEmailStatus(id: string, status: string) {
+    // Check if email exists
+    await this.findEmail(id);
 
-    if (status === 'read' && !email.is_read) {
-      email.is_read = true;
-      email.read_at = new Date();
+    const updateData: any = {
+      status,
+    };
+
+    if (status === 'sent' && !updateData.sent_at) {
+      updateData.sent_at = new Date();
     }
 
-    if (status === 'sent' && !email.sent_at) {
-      email.sent_at = new Date();
-    }
-
-    return email;
+    return this.prisma.email.update({
+      where: { id },
+      data: updateData,
+      include: {
+        recipients: {
+          select: {
+            user_id: true,
+            is_read: true,
+            read_at: true,
+          },
+        },
+      },
+    });
   }
 
-  markEmailAsRead(id: string) {
+  async markEmailAsRead(id: string, userId?: string) {
+    const email = await this.findEmail(id);
+
+    // Update the recipient's read status if userId is provided
+    if (userId && email.recipients.length > 0) {
+      await this.prisma.emailRecipient.updateMany({
+        where: {
+          email_id: id,
+          user_id: userId,
+        },
+        data: {
+          is_read: true,
+          read_at: new Date(),
+        },
+      });
+    }
+
     return this.updateEmailStatus(id, 'read');
   }
 
-  markEmailAsDraft(id: string) {
+  async markEmailAsDraft(id: string) {
     return this.updateEmailStatus(id, 'draft');
   }
 
-  archiveEmail(id: string) {
+  async archiveEmail(id: string) {
     return this.updateEmailStatus(id, 'archived');
   }
 
-  deleteEmail(id: string) {
+  async deleteEmail(id: string) {
     return this.updateEmailStatus(id, 'deleted');
   }
 
-  scheduleEmail(id: string, scheduledAt: Date) {
-    const email = this.findEmail(id);
-    email.scheduled_at = scheduledAt;
-    email.status = 'scheduled';
-    email.updated_at = new Date();
-    return email;
+  async scheduleEmail(id: string, scheduledAt: Date) {
+    // Check if email exists
+    await this.findEmail(id);
+
+    return this.prisma.email.update({
+      where: { id },
+      data: {
+        scheduled_at: scheduledAt,
+        status: 'scheduled',
+      },
+      include: {
+        recipients: {
+          select: {
+            user_id: true,
+            is_read: true,
+            read_at: true,
+          },
+        },
+      },
+    });
   }
 
   // Get emails by type
-  getInbox(userId: number, embassy_id?: number) {
+  async getInbox(userId: number, embassy_id?: number) {
     return this.findAllEmails({
       receiver_id: userId,
       embassy_id,
@@ -287,7 +431,7 @@ export class MessagesService {
     });
   }
 
-  getSentEmails(userId: number, embassy_id?: number) {
+  async getSentEmails(userId: number, embassy_id?: number) {
     return this.findAllEmails({
       sender_id: userId,
       embassy_id,
@@ -295,7 +439,7 @@ export class MessagesService {
     });
   }
 
-  getDrafts(userId: number, embassy_id?: number) {
+  async getDrafts(userId: number, embassy_id?: number) {
     return this.findAllEmails({
       sender_id: userId,
       embassy_id,
@@ -303,7 +447,7 @@ export class MessagesService {
     });
   }
 
-  getArchivedEmails(userId: number, embassy_id?: number) {
+  async getArchivedEmails(userId: number, embassy_id?: number) {
     return this.findAllEmails({
       receiver_id: userId,
       embassy_id,
@@ -313,94 +457,171 @@ export class MessagesService {
 
   // ==================== NOTIFICATIONS ====================
 
-  createNotification(createNotificationDto: CreateNotificationDto) {
-    const newNotification = {
-      id: randomUUID(),
-      ...createNotificationDto,
-      created_at: new Date(),
-    };
-    this.notifications.push(newNotification);
-    return newNotification;
+  async createNotification(createNotificationDto: CreateNotificationDto) {
+    return this.prisma.notification.create({
+      data: {
+        user_id: createNotificationDto.user_id.toString(),
+        title: createNotificationDto.title,
+        message: createNotificationDto.message,
+        type: createNotificationDto.type,
+        link: createNotificationDto.link,
+        is_read: createNotificationDto.is_read,
+      },
+    });
   }
 
-  findUserNotifications(userId: number, unreadOnly = false) {
-    let filtered = this.notifications.filter(
-      (notif) => notif.user_id === userId,
-    );
+  async findUserNotifications(userId: number, unreadOnly = false) {
+    const where: any = {
+      user_id: userId.toString(),
+    };
 
     if (unreadOnly) {
-      filtered = filtered.filter((notif) => !notif.is_read);
+      where.is_read = false;
     }
 
-    return filtered.sort(
-      (a, b) => b.created_at.getTime() - a.created_at.getTime(),
-    );
+    return this.prisma.notification.findMany({
+      where,
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
   }
 
-  markNotificationAsRead(id: string) {
-    const notification = this.notifications.find((notif) => notif.id === id);
+  async markNotificationAsRead(id: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+    });
+
     if (!notification) {
       throw new NotFoundException(`Notification with ID ${id} not found`);
     }
-    notification.is_read = true;
-    return notification;
-  }
 
-  markAllNotificationsAsRead(userId: number) {
-    const userNotifications = this.notifications.filter(
-      (notif) => notif.user_id === userId,
-    );
-    userNotifications.forEach((notif) => {
-      notif.is_read = true;
+    return this.prisma.notification.update({
+      where: { id },
+      data: { is_read: true },
     });
-    return { updated: userNotifications.length };
   }
 
-  deleteNotification(id: string) {
-    const notificationIndex = this.notifications.findIndex(
-      (notif) => notif.id === id,
-    );
-    if (notificationIndex === -1) {
+  async markAllNotificationsAsRead(userId: number) {
+    const result = await this.prisma.notification.updateMany({
+      where: {
+        user_id: userId.toString(),
+        is_read: false,
+      },
+      data: {
+        is_read: true,
+      },
+    });
+
+    return { updated: result.count };
+  }
+
+  async deleteNotification(id: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+    });
+
+    if (!notification) {
       throw new NotFoundException(`Notification with ID ${id} not found`);
     }
-    const deletedNotification = this.notifications[notificationIndex];
-    this.notifications.splice(notificationIndex, 1);
-    return deletedNotification;
+
+    return this.prisma.notification.delete({
+      where: { id },
+    });
   }
 
   // ==================== STATISTICS ====================
 
-  getMessagingStats(userId: number, embassy_id?: number) {
-    let emails = this.emails;
-    let chatrooms = this.chatrooms;
-    const notifications = this.notifications.filter(
-      (notif) => notif.user_id === userId,
-    );
+  async getMessagingStats(userId: number, embassy_id?: number) {
+    const userIdStr = userId.toString();
+    const embassyIdStr = embassy_id?.toString();
 
-    if (embassy_id !== undefined) {
-      emails = emails.filter((email) => email.embassy_id === embassy_id);
-      chatrooms = chatrooms.filter((room) => room.embassy_id === embassy_id);
-    }
+    const emailWhere: any = embassyIdStr
+      ? { embassy_id: embassyIdStr }
+      : {};
+    const chatroomWhere: any = embassyIdStr
+      ? { embassy_id: embassyIdStr }
+      : {};
 
-    const receivedEmails = emails.filter((email) =>
-      email.receiver_ids.includes(userId),
-    );
-    const sentEmails = emails.filter((email) => email.sender_id === userId);
+    const [receivedEmails, sentEmails, userChatrooms, notifications] =
+      await Promise.all([
+        this.prisma.email.count({
+          where: {
+            ...emailWhere,
+            recipients: {
+              some: {
+                user_id: userIdStr,
+              },
+            },
+          },
+        }),
+        this.prisma.email.count({
+          where: {
+            ...emailWhere,
+            sender_id: userIdStr,
+          },
+        }),
+        this.prisma.chatroom.count({
+          where: {
+            ...chatroomWhere,
+            members: {
+              some: {
+                user_id: userIdStr,
+              },
+            },
+          },
+        }),
+        this.prisma.notification.findMany({
+          where: {
+            user_id: userIdStr,
+          },
+        }),
+      ]);
+
+    // Get unread emails count
+    const unreadEmails = await this.prisma.emailRecipient.count({
+      where: {
+        user_id: userIdStr,
+        is_read: false,
+        email: emailWhere.embassy_id
+          ? { embassy_id: emailWhere.embassy_id }
+          : {},
+      },
+    });
+
+    // Get drafts count
+    const drafts = await this.prisma.email.count({
+      where: {
+        ...emailWhere,
+        sender_id: userIdStr,
+        status: 'draft',
+      },
+    });
+
+    // Get archived emails count
+    const archived = await this.prisma.email.count({
+      where: {
+        ...emailWhere,
+        recipients: {
+          some: {
+            user_id: userIdStr,
+          },
+        },
+        status: 'archived',
+      },
+    });
 
     return {
       emails: {
-        total: receivedEmails.length + sentEmails.length,
-        received: receivedEmails.length,
-        sent: sentEmails.length,
-        unread: receivedEmails.filter((e) => !e.is_read).length,
-        drafts: emails.filter(
-          (e) => e.sender_id === userId && e.status === 'draft',
-        ).length,
-        archived: receivedEmails.filter((e) => e.status === 'archived').length,
+        total: receivedEmails + sentEmails,
+        received: receivedEmails,
+        sent: sentEmails,
+        unread: unreadEmails,
+        drafts,
+        archived,
       },
       chatrooms: {
-        total: chatrooms.filter((room) => room.member_ids.includes(userId))
-          .length,
+        total: userChatrooms,
       },
       notifications: {
         total: notifications.length,
