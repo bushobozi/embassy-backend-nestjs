@@ -12,6 +12,14 @@ interface JwtPayload {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS for cross-origin requests
+  app.enableCors({
+    origin: process.env.VITE_HOSTS?.split(','),
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
+
   // Add global prefix for all routes
   app.setGlobalPrefix('api/v1');
 
