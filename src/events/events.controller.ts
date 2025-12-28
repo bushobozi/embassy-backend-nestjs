@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -53,7 +52,7 @@ export class EventsController {
     description: 'The event details.',
   })
   @ApiResponse({ status: 404, description: 'Event not found.' })
-  getOne(@Param('id', ParseIntPipe) id: string) {
+  getOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
   }
 
@@ -66,7 +65,7 @@ export class EventsController {
   })
   @ApiResponse({ status: 404, description: 'Event not found.' })
   update(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id') id: string,
     @Body() updateEventDto: Partial<UpdateEventDto>,
   ) {
     return this.eventsService.update(id, updateEventDto);
@@ -81,7 +80,7 @@ export class EventsController {
     description: 'The event has been successfully deleted.',
   })
   @ApiResponse({ status: 404, description: 'Event not found.' })
-  remove(@Param('id', ParseIntPipe) id: string) {
+  remove(@Param('id') id: string) {
     return this.eventsService.remove(id);
   }
 
@@ -93,7 +92,7 @@ export class EventsController {
     description: 'The event has been successfully deactivated.',
   })
   @ApiResponse({ status: 404, description: 'Event not found.' })
-  deactivate(@Param('id', ParseIntPipe) id: string) {
+  deactivate(@Param('id') id: string) {
     return this.eventsService.deactivate(id);
   }
 
@@ -105,7 +104,7 @@ export class EventsController {
     description: 'The event has been successfully activated.',
   })
   @ApiResponse({ status: 404, description: 'Event not found.' })
-  activate(@Param('id', ParseIntPipe) id: string) {
+  activate(@Param('id') id: string) {
     return this.eventsService.activate(id);
   }
 
