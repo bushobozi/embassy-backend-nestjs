@@ -41,8 +41,8 @@ export class StaffService {
       nationality: 'USA',
       staff_status: 'active',
       is_transferred: false,
-      embassy_id: 1,
-      created_by: 1,
+      embassy_id: '1234567890abcdef',
+      created_by: '1',
       created_at: new Date(),
       updated_at: new Date(),
     },
@@ -189,7 +189,7 @@ export class StaffService {
   }
 
   // Transfer management
-  transferStaff(id: string, embassy_id: number, reason?: string) {
+  transferStaff(id: string, embassy_id: string, reason?: string) {
     return this.update(id, {
       embassy_id,
       is_transferred: true,
@@ -199,7 +199,7 @@ export class StaffService {
   }
 
   // Statistics
-  getStats(embassy_id?: number) {
+  getStats(embassy_id?: string) {
     let staff = this.staff;
 
     if (embassy_id !== undefined) {

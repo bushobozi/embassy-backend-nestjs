@@ -236,11 +236,11 @@ export class CreateStaffDto {
     example: 1,
     description: 'The embassy ID associated with the staff member',
   })
-  embassy_id: number;
+  embassy_id: string;
 
   @ApiProperty({
     example: 1,
     description: 'The ID of the user who created the staff record',
   })
-  created_by: number;
+  created_by: string;
 }

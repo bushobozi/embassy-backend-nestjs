@@ -53,7 +53,7 @@ export class StaffController {
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter statistics by embassy ID',
   })
   @ApiResponse({
@@ -61,8 +61,7 @@ export class StaffController {
     description: 'Staff statistics summary.',
   })
   getStats(@Query('embassy_id') embassy_id?: string) {
-    const embassyIdNum = embassy_id ? parseInt(embassy_id, 10) : undefined;
-    return this.staffService.getStats(embassyIdNum);
+    return this.staffService.getStats(embassy_id);
   }
 
   @Get(':id')
@@ -161,7 +160,7 @@ export class StaffController {
   @ApiQuery({
     name: 'embassy_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'The target embassy ID',
   })
   @ApiQuery({
@@ -180,7 +179,6 @@ export class StaffController {
     @Query('embassy_id') embassy_id: string,
     @Query('reason') reason?: string,
   ) {
-    const embassyIdNum = parseInt(embassy_id, 10);
-    return this.staffService.transferStaff(id, embassyIdNum, reason);
+    return this.staffService.transferStaff(id, embassy_id, reason);
   }
 }
