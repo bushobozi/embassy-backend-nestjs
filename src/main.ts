@@ -11,6 +11,10 @@ interface JwtPayload {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Add global prefix for all routes
+  app.setGlobalPrefix('api/v1');
+
   const config = new DocumentBuilder()
     .setTitle('Embassy System MVP API')
     .setDescription(
@@ -30,18 +34,11 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-
-  // Protect Swagger - only super admin can access
-  const swaggerPath = 'api/swagger_docs/embassy';
-
-  // Add middleware to protect Swagger route BEFORE setting it up
+  const swaggerPath = 'api/v1/swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Check if the request is for the Swagger documentation
     if (!req.path.startsWith(`/${swaggerPath}`)) {
       return next();
     }
-
-    // Allow static assets (CSS, JS, images) to load without authentication
     if (
       req.path.includes('.css') ||
       req.path.includes('.js') ||
@@ -54,8 +51,6 @@ async function bootstrap() {
     ) {
       return next();
     }
-
-    // Try to get token from Authorization header or query parameter
     let token: string | undefined;
     const authHeader = req.headers.authorization;
 
@@ -78,14 +73,10 @@ async function bootstrap() {
       if (!secret) {
         throw new Error('JWT secret not configured');
       }
-
-      // Verify and decode the JWT token
       const payload = jwt.verify(token, secret) as JwtPayload;
 
       console.log('JWT Payload:', payload);
       console.log('Role:', payload.role);
-
-      // Check if user is super_admin
       if (payload.role !== 'super_admin') {
         console.log('Access denied - role is not super_admin');
         return res.status(403).json({
@@ -111,7 +102,6 @@ async function bootstrap() {
       persistAuthorization: true,
     },
     customSiteTitle: 'Embassy System API Docs',
-    customCss: '.swagger-ui .topbar { display: none }',
   });
 
   await app.listen(process.env.PORT ?? 3000);
