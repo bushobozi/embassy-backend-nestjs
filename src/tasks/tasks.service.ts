@@ -1,94 +1,75 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto, UpdateTaskDto, QueryTasksDto } from './export-tasks';
-import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TasksService {
-  private tasks: Array<
-    CreateTaskDto & { id: string; created_at: Date; updated_at: Date }
-  > = [
-    {
-      id: randomUUID(),
-      title: 'Prepare quarterly report',
-      description:
-        'Compile and analyze data for the quarterly performance report.',
-      due_date: new Date('2024-07-15T17:00:00Z'),
-      status: 'in_progress',
-      priority: 'high',
-      is_urgent: true,
-      assigned_to: 3,
-      created_by: 1,
-      embassy_id: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-    {
-      id: randomUUID(),
-      title: 'Update website content',
-      description: 'Review and update embassy website content for accuracy.',
-      due_date: new Date('2024-07-20T17:00:00Z'),
-      status: 'pending',
-      priority: 'medium',
-      is_urgent: false,
-      assigned_to: 2,
-      created_by: 1,
-      embassy_id: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  findAll(queryParams?: QueryTasksDto) {
-    let filtered = this.tasks;
+  async findAll(queryParams?: QueryTasksDto) {
+    const where: any = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.embassy_id === queryParams.embassy_id,
-        );
+        where.embassy_id = queryParams.embassy_id.toString();
       }
 
       if (queryParams.assigned_to !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.assigned_to === queryParams.assigned_to,
-        );
+        where.assigned_to = queryParams.assigned_to.toString();
       }
 
       if (queryParams.created_by !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.created_by === queryParams.created_by,
-        );
+        where.created_by = queryParams.created_by.toString();
       }
 
       if (queryParams.status !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.status === queryParams.status,
-        );
+        where.status = queryParams.status;
       }
 
       if (queryParams.priority !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.priority === queryParams.priority,
-        );
+        where.priority = queryParams.priority;
       }
 
       if (queryParams.is_urgent !== undefined) {
-        filtered = filtered.filter(
-          (task) => task.is_urgent === queryParams.is_urgent,
-        );
+        where.is_urgent = queryParams.is_urgent;
       }
     }
 
     const page = Number(queryParams?.page) || 1;
     const limit = Number(queryParams?.limit) || 25;
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit);
     const skip = (page - 1) * limit;
 
-    const paginatedTasks = filtered.slice(skip, skip + limit);
+    const [tasks, total] = await Promise.all([
+      this.prisma.task.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        select: {
+          id: true,
+          embassy_id: true,
+          title: true,
+          description: true,
+          assigned_to: true,
+          created_by: true,
+          status: true,
+          priority: true,
+          is_urgent: true,
+          due_date: true,
+          completed_at: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
+      this.prisma.task.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return {
-      data: paginatedTasks,
+      data: tasks,
       meta: {
         total,
         page,
@@ -98,117 +79,198 @@ export class TasksService {
     };
   }
 
-  findOne(id: string) {
-    const task = this.tasks.find((task) => task.id === id);
+  async findOne(id: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        assigned_to: true,
+        created_by: true,
+        status: true,
+        priority: true,
+        is_urgent: true,
+        due_date: true,
+        completed_at: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
     return task;
   }
 
-  create(createTaskDto: CreateTaskDto) {
-    const newTask = {
-      id: randomUUID(),
-      ...createTaskDto,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.tasks.push(newTask);
-    return newTask;
+  async create(createTaskDto: CreateTaskDto, created_by: string) {
+    const task = await this.prisma.task.create({
+      data: {
+        embassy_id: createTaskDto.embassy_id.toString(),
+        title: createTaskDto.title,
+        description: createTaskDto.description,
+        assigned_to: createTaskDto.assigned_to.toString(),
+        created_by,
+        status: createTaskDto.status || 'pending',
+        priority: createTaskDto.priority || 'medium',
+        is_urgent: createTaskDto.is_urgent || false,
+        due_date: createTaskDto.due_date,
+      },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        assigned_to: true,
+        created_by: true,
+        status: true,
+        priority: true,
+        is_urgent: true,
+        due_date: true,
+        completed_at: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return task;
   }
 
-  update(id: string, updateTaskDto: Partial<UpdateTaskDto>) {
-    const taskIndex = this.tasks.findIndex((task) => task.id === id);
-    if (taskIndex === -1) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
+  async update(id: string, updateTaskDto: Partial<UpdateTaskDto>) {
+    // Check if task exists
+    await this.findOne(id);
+
+    const dataToUpdate: any = { ...updateTaskDto };
+
+    if (updateTaskDto.embassy_id !== undefined) {
+      dataToUpdate.embassy_id = updateTaskDto.embassy_id.toString();
     }
 
-    const updatedTask = {
-      ...this.tasks[taskIndex],
-      ...updateTaskDto,
-      updated_at: new Date(),
-    };
+    if (updateTaskDto.assigned_to !== undefined) {
+      dataToUpdate.assigned_to = updateTaskDto.assigned_to.toString();
+    }
 
-    this.tasks[taskIndex] = updatedTask;
-    return updatedTask;
+    if (updateTaskDto.created_by !== undefined) {
+      dataToUpdate.created_by = updateTaskDto.created_by.toString();
+    }
+
+    // Set completed_at if status changes to completed
+    if (updateTaskDto.status === 'completed' && !dataToUpdate.completed_at) {
+      dataToUpdate.completed_at = new Date();
+    }
+
+    const task = await this.prisma.task.update({
+      where: { id },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        assigned_to: true,
+        created_by: true,
+        status: true,
+        priority: true,
+        is_urgent: true,
+        due_date: true,
+        completed_at: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return task;
   }
 
-  remove(id: string) {
-    const taskIndex = this.tasks.findIndex((task) => task.id === id);
-    if (taskIndex === -1) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
-    const deletedTask = this.tasks[taskIndex];
-    this.tasks.splice(taskIndex, 1);
-    return deletedTask;
+  async remove(id: string) {
+    // Check if task exists
+    await this.findOne(id);
+
+    return this.prisma.task.delete({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        description: true,
+        status: true,
+      },
+    });
   }
 
   // Status management
-  markAsPending(id: string) {
+  async markAsPending(id: string) {
     return this.update(id, { status: 'pending' });
   }
 
-  markAsInProgress(id: string) {
+  async markAsInProgress(id: string) {
     return this.update(id, { status: 'in_progress' });
   }
 
-  markAsCompleted(id: string) {
+  async markAsCompleted(id: string) {
     return this.update(id, { status: 'completed' });
   }
 
   // Priority management
-  setLowPriority(id: string) {
+  async setLowPriority(id: string) {
     return this.update(id, { priority: 'low' });
   }
 
-  setMediumPriority(id: string) {
+  async setMediumPriority(id: string) {
     return this.update(id, { priority: 'medium' });
   }
 
-  setHighPriority(id: string) {
+  async setHighPriority(id: string) {
     return this.update(id, { priority: 'high' });
   }
 
   // Urgent flag
-  markAsUrgent(id: string) {
+  async markAsUrgent(id: string) {
     return this.update(id, { is_urgent: true });
   }
 
-  unmarkAsUrgent(id: string) {
+  async unmarkAsUrgent(id: string) {
     return this.update(id, { is_urgent: false });
   }
 
   // Statistics
-  getStats(embassy_id?: number, assigned_to?: number) {
-    let tasks = this.tasks;
+  async getStats(embassy_id?: number, assigned_to?: number) {
+    const where: any = {};
 
     if (embassy_id !== undefined) {
-      tasks = tasks.filter((task) => task.embassy_id === embassy_id);
+      where.embassy_id = embassy_id.toString();
     }
 
     if (assigned_to !== undefined) {
-      tasks = tasks.filter((task) => task.assigned_to === assigned_to);
+      where.assigned_to = assigned_to.toString();
     }
 
-    const total = tasks.length;
-    const pending = tasks.filter((task) => task.status === 'pending').length;
-    const inProgress = tasks.filter(
-      (task) => task.status === 'in_progress',
-    ).length;
-    const completed = tasks.filter(
-      (task) => task.status === 'completed',
-    ).length;
+    const [total, pending, inProgress, completed, low, medium, high, urgent] =
+      await Promise.all([
+        this.prisma.task.count({ where }),
+        this.prisma.task.count({ where: { ...where, status: 'pending' } }),
+        this.prisma.task.count({ where: { ...where, status: 'in_progress' } }),
+        this.prisma.task.count({ where: { ...where, status: 'completed' } }),
+        this.prisma.task.count({ where: { ...where, priority: 'low' } }),
+        this.prisma.task.count({ where: { ...where, priority: 'medium' } }),
+        this.prisma.task.count({ where: { ...where, priority: 'high' } }),
+        this.prisma.task.count({ where: { ...where, is_urgent: true } }),
+      ]);
 
-    const low = tasks.filter((task) => task.priority === 'low').length;
-    const medium = tasks.filter((task) => task.priority === 'medium').length;
-    const high = tasks.filter((task) => task.priority === 'high').length;
-
-    const urgent = tasks.filter((task) => task.is_urgent).length;
-
-    const overdue = tasks.filter(
-      (task) =>
-        new Date(task.due_date) < new Date() && task.status !== 'completed',
-    ).length;
+    // Count overdue tasks
+    const overdue = await this.prisma.task.count({
+      where: {
+        ...where,
+        due_date: {
+          lt: new Date(),
+        },
+        status: {
+          not: 'completed',
+        },
+      },
+    });
 
     return {
       total,

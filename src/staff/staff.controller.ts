@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto, QueryStaffDto } from './export-staff';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Staff')
 @ApiBearerAuth('JWT-auth')
@@ -34,8 +35,11 @@ export class StaffController {
     description: 'The staff member has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createStaffDto: CreateStaffDto) {
-    return this.staffService.create(createStaffDto);
+  create(
+    @Body() createStaffDto: CreateStaffDto,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.staffService.create(createStaffDto, userId);
   }
 
   @Get()

@@ -59,6 +59,7 @@ export class AuthService {
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
+        embassy_id: null, // Regular users don't have embassy_id until they become staff
       },
       ...tokens,
     };
@@ -67,9 +68,16 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user by email
+    // Find user by email with staff profile to get embassy_id
     const user = await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        staff_profile: {
+          select: {
+            embassy_id: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -104,6 +112,7 @@ export class AuthService {
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
+        embassy_id: user.staff_profile?.embassy_id || null,
       },
       ...tokens,
     };

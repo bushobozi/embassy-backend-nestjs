@@ -1,124 +1,241 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './export-users';
-import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  private users: Array<
-    CreateUserDto & { id: string; created_at: Date; updated_at: Date }
-  > = [
-    {
-      id: randomUUID(),
-      first_name: 'John',
-      middle_name: 'A.',
-      last_name: 'Doe',
-      email: 'sdfds@email.com',
-      password: 'strongPassword123!',
-      role: 'admin',
-      is_active: true,
-      phone_number: '+1234567890',
-      address: '123 Main St, Anytown, USA',
-      date_of_birth: new Date('1990-01-01'),
-      work_phone_number: '+0987654321',
-      work_email: 'john.doe@embassy.com',
-      emergency_contact_name: 'Jane Doe',
-      emergency_contact_phone_number: '+0987654321',
-      emergency_contact_relationship: 'Spouse',
-      department: 'IT',
-      position: 'Developer',
-      hire_date: new Date('2020-06-15'),
-      biography: 'Experienced developer with expertise in NestJS',
-      profile_picture: 'https://example.com/profiles/johndoe.jpg',
-      languages: ['English', 'Spanish'],
-      certifications: ['AWS Certified Developer'],
-      social_media_links: {
-        linkedin: 'https://linkedin.com/in/johndoe',
-        twitter: '@johndoe',
+  constructor(private prisma: PrismaService) {}
+
+  async findAll() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
       },
-      previous_employers: ['Tech Corp', 'Innovation Inc'],
-      education: ['BS in Computer Science - MIT'],
-      embassy_id: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ];
-  findAll() {
-    return this.users;
+    });
   }
-  findOne(id: string) {
-    const user = this.users.find((user) => user.id === id);
+
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
   }
-  create(createUserDto: CreateUserDto) {
-    const newUser = {
-      id: randomUUID(),
-      ...createUserDto,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.users.push(newUser);
-    return newUser;
+
+  async create(createUserDto: CreateUserDto) {
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        ...createUserDto,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return user;
   }
-  findByEmail(email: string) {
-    const user = this.users.find((user) => user.email === email);
+
+  async findByEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!user) {
       throw new NotFoundException(`User with email ${email} not found`);
     }
     return user;
   }
-  findByEmbassy(embassyId: number) {
-    return this.users.filter((user) => user.embassy_id === embassyId);
+
+  async findByEmbassy(embassyId: number) {
+    // Find staff members for this embassy, then get their users
+    const staff = await this.prisma.staff.findMany({
+      where: {
+        embassy_id: embassyId.toString(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            first_name: true,
+            last_name: true,
+            role: true,
+            is_active: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+      },
+    });
+
+    return staff.map((s) => s.user);
   }
-  findByRole(role: string) {
-    return this.users.filter((user) => user.role === role);
+
+  async findByRole(role: string) {
+    return this.prisma.user.findMany({
+      where: { role },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
   }
-  findActive() {
-    return this.users.filter((user) => user.is_active);
+
+  async findActive() {
+    return this.prisma.user.findMany({
+      where: { is_active: true },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
   }
-  findByDepartment(department: string) {
-    return this.users.filter((user) => user.department === department);
+
+  async findByDepartment(department: string) {
+    // Find staff members in this department, then get their users
+    const staff = await this.prisma.staff.findMany({
+      where: {
+        department,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            first_name: true,
+            last_name: true,
+            role: true,
+            is_active: true,
+            created_at: true,
+            updated_at: true,
+          },
+        },
+      },
+    });
+
+    return staff.map((s) => s.user);
   }
-  update(id: string, updateUserDto: UpdateUserDto) {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    // Check if user exists
+    await this.findOne(id);
+
+    // If password is being updated, hash it
+    const dataToUpdate: any = { ...updateUserDto };
+    if (updateUserDto.password) {
+      dataToUpdate.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    const updatedUser = {
-      ...this.users[userIndex],
-      ...updateUserDto,
-      updated_at: new Date(),
-    };
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+        is_active: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
 
-    this.users[userIndex] = updatedUser;
-    return updatedUser;
+    return user;
   }
-  remove(id: string) {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
 
-    const deletedUser = this.users[userIndex];
-    this.users.splice(userIndex, 1);
-    return deletedUser;
+  async remove(id: string) {
+    // Check if user exists
+    await this.findOne(id);
+
+    return this.prisma.user.delete({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+      },
+    });
   }
-  deactivate(id: string) {
+
+  async deactivate(id: string) {
     return this.update(id, { is_active: false });
   }
-  activate(id: string) {
+
+  async activate(id: string) {
     return this.update(id, { is_active: true });
   }
-  getStats() {
-    const total = this.users.length;
-    const active = this.users.filter((user) => user.is_active).length;
+
+  async getStats() {
+    const [total, active, byRole] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { is_active: true } }),
+      this.prisma.user.groupBy({
+        by: ['role'],
+        _count: true,
+      }),
+    ]);
+
     const inactive = total - active;
-    const byRole = this.users.reduce(
-      (acc, user) => {
-        acc[user.role] = (acc[user.role] || 0) + 1;
+    const roleStats = byRole.reduce(
+      (acc, item) => {
+        acc[item.role] = item._count;
         return acc;
       },
       {} as Record<string, number>,
@@ -128,7 +245,7 @@ export class UsersService {
       total,
       active,
       inactive,
-      byRole,
+      byRole: roleStats,
     };
   }
 }

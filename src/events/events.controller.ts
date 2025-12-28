@@ -17,6 +17,7 @@ import {
   UpdateEventDto,
   QueryEventsDto,
 } from './export-events';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Events')
 @ApiBearerAuth('JWT-auth')
@@ -30,8 +31,11 @@ export class EventsController {
     description: 'The event has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
+  create(
+    @Body() createEventDto: CreateEventDto,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.eventsService.create(createEventDto, userId);
   }
 
   @Get()

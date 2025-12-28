@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto, UpdateTaskDto, QueryTasksDto } from './export-tasks';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Tasks')
 @ApiBearerAuth('JWT-auth')
@@ -34,8 +35,11 @@ export class TasksController {
     description: 'The task has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(
+    @Body() createTaskDto: CreateTaskDto,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.tasksService.create(createTaskDto, userId);
   }
 
   @Get()

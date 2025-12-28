@@ -4,60 +4,61 @@ import {
   UpdatePublicationDto,
   QueryPublicationsDto,
 } from './export-publications';
-import { randomUUID } from 'crypto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PublicationsService {
-  private publications: Array<
-    CreatePublicationDto & { id: string; created_at: Date; updated_at: Date }
-  > = [
-    {
-      id: randomUUID(),
-      title: 'Advancements in Renewable Energy Technologies',
-      slug: 'advancements-in-renewable-energy-technologies',
-      publication_type: 'research_paper',
-      content:
-        'This publication explores the latest advancements in renewable energy technologies...',
-      tags: ['renewable energy', 'sustainability', 'technology'],
-      status: 'published',
-      created_by: 1,
-      embassy_id: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    },
-  ];
+  constructor(private prisma: PrismaService) {}
 
-  findAll(queryParams?: QueryPublicationsDto) {
-    let filtered = this.publications;
+  async findAll(queryParams?: QueryPublicationsDto) {
+    const where: any = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        filtered = filtered.filter(
-          (pub) => pub.embassy_id === queryParams.embassy_id,
-        );
+        where.embassy_id = queryParams.embassy_id.toString();
       }
 
       if (queryParams.status !== undefined) {
-        filtered = filtered.filter((pub) => pub.status === queryParams.status);
+        where.status = queryParams.status;
       }
 
       if (queryParams.publication_type !== undefined) {
-        filtered = filtered.filter(
-          (pub) => pub.publication_type === queryParams.publication_type,
-        );
+        where.publication_type = queryParams.publication_type;
       }
     }
 
     const page = Number(queryParams?.page) || 1;
     const limit = Number(queryParams?.limit) || 25;
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit);
     const skip = (page - 1) * limit;
 
-    const paginatedPublications = filtered.slice(skip, skip + limit);
+    const [publications, total] = await Promise.all([
+      this.prisma.publication.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        select: {
+          id: true,
+          embassy_id: true,
+          title: true,
+          content: true,
+          publication_type: true,
+          status: true,
+          published_at: true,
+          created_by: true,
+          created_at: true,
+          updated_at: true,
+        },
+      }),
+      this.prisma.publication.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return {
-      data: paginatedPublications,
+      data: publications,
       meta: {
         total,
         page,
@@ -67,92 +68,182 @@ export class PublicationsService {
     };
   }
 
-  findOne(id: string) {
-    const publication = this.publications.find((pub) => pub.id === id);
+  async findOne(id: string) {
+    const publication = await this.prisma.publication.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        content: true,
+        publication_type: true,
+        status: true,
+        published_at: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!publication) {
       throw new NotFoundException(`Publication with ID ${id} not found`);
     }
     return publication;
   }
 
-  findBySlug(slug: string) {
-    const publication = this.publications.find((pub) => pub.slug === slug);
+  async findBySlug(slug: string) {
+    // Note: The schema doesn't have a slug field, so we'll search by title
+    // If you need slug functionality, you'll need to add it to the schema
+    const publication = await this.prisma.publication.findFirst({
+      where: { title: slug },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        content: true,
+        publication_type: true,
+        status: true,
+        published_at: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
     if (!publication) {
       throw new NotFoundException(`Publication with slug ${slug} not found`);
     }
     return publication;
   }
 
-  create(createPublicationDto: CreatePublicationDto) {
-    const newPublication = {
-      id: randomUUID(),
-      ...createPublicationDto,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-    this.publications.push(newPublication);
-    return newPublication;
+  async create(createPublicationDto: CreatePublicationDto, created_by: string) {
+    const { embassy_id, ...publicationData } = createPublicationDto;
+
+    const publication = await this.prisma.publication.create({
+      data: {
+        ...publicationData,
+        embassy_id: embassy_id.toString(),
+        created_by,
+        published_at:
+          createPublicationDto.status === 'published' ? new Date() : null,
+      },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        content: true,
+        publication_type: true,
+        status: true,
+        published_at: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return publication;
   }
 
-  update(id: string, updatePublicationDto: Partial<UpdatePublicationDto>) {
-    const pubIndex = this.publications.findIndex((pub) => pub.id === id);
-    if (pubIndex === -1) {
-      throw new NotFoundException(`Publication with ID ${id} not found`);
+  async update(id: string, updatePublicationDto: Partial<UpdatePublicationDto>) {
+    // Check if publication exists
+    await this.findOne(id);
+
+    const dataToUpdate: any = { ...updatePublicationDto };
+
+    if (updatePublicationDto.embassy_id !== undefined) {
+      dataToUpdate.embassy_id = updatePublicationDto.embassy_id.toString();
     }
 
-    const updatedPublication = {
-      ...this.publications[pubIndex],
-      ...updatePublicationDto,
-      updated_at: new Date(),
-    };
-
-    this.publications[pubIndex] = updatedPublication;
-    return updatedPublication;
-  }
-
-  remove(id: string) {
-    const pubIndex = this.publications.findIndex((pub) => pub.id === id);
-    if (pubIndex === -1) {
-      throw new NotFoundException(`Publication with ID ${id} not found`);
+    if (updatePublicationDto.created_by !== undefined) {
+      dataToUpdate.created_by = updatePublicationDto.created_by.toString();
     }
-    const deletedPublication = this.publications[pubIndex];
-    this.publications.splice(pubIndex, 1);
-    return deletedPublication;
+
+    // Set published_at if status changes to published
+    if (
+      updatePublicationDto.status === 'published' &&
+      !dataToUpdate.published_at
+    ) {
+      dataToUpdate.published_at = new Date();
+    }
+
+    const publication = await this.prisma.publication.update({
+      where: { id },
+      data: dataToUpdate,
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        content: true,
+        publication_type: true,
+        status: true,
+        published_at: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+
+    return publication;
   }
 
-  publish(id: string) {
+  async remove(id: string) {
+    // Check if publication exists
+    await this.findOne(id);
+
+    return this.prisma.publication.delete({
+      where: { id },
+      select: {
+        id: true,
+        embassy_id: true,
+        title: true,
+        content: true,
+        publication_type: true,
+        status: true,
+      },
+    });
+  }
+
+  async publish(id: string) {
     return this.update(id, { status: 'published' });
   }
 
-  archive(id: string) {
+  async archive(id: string) {
     return this.update(id, { status: 'archived' });
   }
 
-  draft(id: string) {
+  async draft(id: string) {
     return this.update(id, { status: 'draft' });
   }
 
-  getStats(embassy_id?: number) {
-    let publications = this.publications;
+  async getStats(embassy_id?: number) {
+    const where: any = {};
 
     if (embassy_id !== undefined) {
-      publications = publications.filter(
-        (pub) => pub.embassy_id === embassy_id,
-      );
+      where.embassy_id = embassy_id.toString();
     }
 
-    const total = publications.length;
-    const published = publications.filter(
-      (pub) => pub.status === 'published',
-    ).length;
-    const draft = publications.filter((pub) => pub.status === 'draft').length;
-    const archived = publications.filter(
-      (pub) => pub.status === 'archived',
-    ).length;
+    const [total, published, draft, archived, byTypeResults] =
+      await Promise.all([
+        this.prisma.publication.count({ where }),
+        this.prisma.publication.count({
+          where: { ...where, status: 'published' },
+        }),
+        this.prisma.publication.count({ where: { ...where, status: 'draft' } }),
+        this.prisma.publication.count({
+          where: { ...where, status: 'archived' },
+        }),
+        this.prisma.publication.groupBy({
+          by: ['publication_type'],
+          where,
+          _count: true,
+        }),
+      ]);
 
     const byType: Record<string, number> = {};
-    publications.forEach((pub) => {
-      byType[pub.publication_type] = (byType[pub.publication_type] || 0) + 1;
+    byTypeResults.forEach((result) => {
+      if (result.publication_type) {
+        byType[result.publication_type] = result._count;
+      }
     });
 
     return {

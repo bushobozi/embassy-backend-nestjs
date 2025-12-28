@@ -86,7 +86,7 @@ export class MessagesGateway
 
   // Join a chatroom
   @SubscribeMessage('join_chatroom')
-  handleJoinChatroom(
+  async handleJoinChatroom(
     @MessageBody() data: { chatroom_id: string },
     @ConnectedSocket() client: Socket,
   ) {
@@ -100,9 +100,11 @@ export class MessagesGateway
 
     try {
       // Verify chatroom exists and user is a member
-      const chatroom = this.messagesService.findChatroom(chatroom_id);
+      const chatroom = await this.messagesService.findChatroom(chatroom_id);
 
-      if (!chatroom.member_ids.includes(userId)) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
+      const memberUserIds = chatroom.members.map((m: any) => m.user_id);
+      if (!memberUserIds.includes(userId.toString())) {
         client.emit('error', {
           message: 'You are not a member of this chatroom',
         });
@@ -168,7 +170,7 @@ export class MessagesGateway
 
   // Send a chat message
   @SubscribeMessage('send_message')
-  handleSendMessage(
+  async handleSendMessage(
     @MessageBody() data: CreateChatMessageDto,
     @ConnectedSocket() client: Socket,
   ) {
@@ -181,17 +183,24 @@ export class MessagesGateway
 
     try {
       // Create the message (this also creates notifications)
-      const message = this.messagesService.createChatMessage(data);
+      const message = await this.messagesService.createChatMessage(data);
 
       // Broadcast to all members in the chatroom
       this.server.to(data.chatroom_id).emit('new_message', message);
 
       // Send notification events to offline or non-chatroom users
-      const chatroom = this.messagesService.findChatroom(data.chatroom_id);
-      chatroom.member_ids.forEach((memberId) => {
-        if (memberId !== data.sender_id) {
+      const chatroom = await this.messagesService.findChatroom(
+        data.chatroom_id,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return
+      const memberUserIds = chatroom.members.map((m: any) => m.user_id);
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      memberUserIds.forEach((memberId: string) => {
+        if (memberId !== data.sender_id.toString()) {
           // Check if user is online
-          const memberSockets = this.userSockets.get(memberId);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          const memberSockets = this.userSockets.get(parseInt(memberId));
           if (memberSockets && memberSockets.length > 0) {
             // Send notification to all user's connected sockets
             memberSockets.forEach((socketId) => {

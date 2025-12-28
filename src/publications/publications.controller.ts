@@ -24,6 +24,7 @@ import {
   UpdatePublicationDto,
   QueryPublicationsDto,
 } from './export-publications';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Publications')
 @ApiBearerAuth('JWT-auth')
@@ -38,8 +39,11 @@ export class PublicationsController {
     description: 'The publication has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createPublicationDto: CreatePublicationDto) {
-    return this.publicationsService.create(createPublicationDto);
+  create(
+    @Body() createPublicationDto: CreatePublicationDto,
+    @CurrentUser('userId') userId: string,
+  ) {
+    return this.publicationsService.create(createPublicationDto, userId);
   }
 
   @Get()
