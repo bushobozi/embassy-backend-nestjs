@@ -12,10 +12,42 @@ model User {
   email         String   @unique
   password      String
   first_name    String?
+  middle_name   String?
   last_name     String?
   role          String   @default("user") // super_admin, admin, user, staff
   is_active     Boolean  @default(true)
   refresh_token String?
+
+  // Contact Information
+  phone_number                     String?
+  work_phone_number                String?
+  work_email                       String?
+  address                          String?
+
+  // Personal Information
+  date_of_birth String?
+  biography     String?
+
+  // Emergency Contact
+  emergency_contact_name           String?
+  emergency_contact_phone_number   String?
+  emergency_contact_relationship   String?
+
+  // Professional Information
+  department        String?
+  position          String?
+  hire_date         DateTime?
+  profile_picture   String?
+
+  // Arrays (stored as JSON in PostgreSQL)
+  languages         String[] @default([])
+  certifications    String[] @default([])
+  previous_employers String[] @default([])
+  education         String[] @default([])
+
+  // JSON fields
+  social_media_links Json?
+
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
