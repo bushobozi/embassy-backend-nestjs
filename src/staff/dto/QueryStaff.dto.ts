@@ -5,13 +5,13 @@ import { Type } from 'class-transformer';
 export class QueryStaffDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
-    example: 1,
-    type: Number,
+    example: '1234567890abcdef',
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  embassy_id?: number;
+  @Type(() => String)
+  @IsString()
+  embassy_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by gender',

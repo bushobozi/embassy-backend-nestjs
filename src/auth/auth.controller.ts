@@ -7,7 +7,12 @@ import {
   UseGuards,
   Get,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -61,8 +66,9 @@ export class AuthController {
     status: 200,
     description: 'Tokens refreshed successfully',
   })
-  async refreshTokens(@Body('refresh_token') _refreshToken: string) {
+  async refreshTokens() {
     // This will be validated by the refresh strategy
+    await Promise.resolve();
     return { message: 'Use JWT refresh guard for this endpoint' };
   }
 
@@ -85,7 +91,7 @@ export class AuthController {
     status: 200,
     description: 'User profile retrieved successfully',
   })
-  getProfile(@CurrentUser() user: any) {
-    return user;
+  getProfile(@CurrentUser() user: any): Record<string, unknown> {
+    return user as Record<string, unknown>;
   }
 }

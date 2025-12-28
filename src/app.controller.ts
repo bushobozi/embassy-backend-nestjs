@@ -13,7 +13,7 @@ export class AppController {
     const authHeader = req.headers.authorization;
 
     if (authHeader?.startsWith('Bearer ')) {
-      res.redirect('/api/swagger_docs/embassy');
+      res.redirect('/api/swagger_docs/embassy/');
       return;
     }
 
@@ -145,8 +145,8 @@ export class AppController {
 </head>
 <body>
     <div class="login-container">
-        <h1>Embassy System</h1>
-        <p class="subtitle">Sign in to access the dashboard</p>
+        <h1>Embassy APIs</h1>
+        <p class="subtitle">Sign in to access api</p>
 
         <div class="error-message" id="errorMessage"></div>
         <div class="success-message" id="successMessage"></div>
@@ -158,7 +158,7 @@ export class AppController {
                     type="email"
                     id="email"
                     name="email"
-                    placeholder="embassysuper@email.com"
+                    placeholder="Enter supervisor email"
                     required
                     autocomplete="email"
                 />
@@ -178,6 +178,7 @@ export class AppController {
 
             <button type="submit" id="loginButton">Sign In</button>
             <div class="loading" id="loading">Signing in...</div>
+            <p class="subtitle" style="margin-top: 20px; font-size: 12px;">Restricted Access</p>
         </form>
     </div>
 
@@ -225,7 +226,7 @@ export class AppController {
 
                     // Redirect to Swagger docs
                     setTimeout(() => {
-                        window.location.href = '/api';
+                        window.location.href = '/api/swagger_docs/embassy/?token=' + data.access_token;
                     }, 1000);
                 } else {
                     throw new Error(data.message || 'Invalid credentials');
