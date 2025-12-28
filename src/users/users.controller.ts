@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -101,23 +100,23 @@ export class UsersController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a user by ID' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Return the user.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  findOne(@Param('id', ParseIntPipe) id: string) {
+  findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully updated.',
   })
   @ApiResponse({ status: 404, description: 'User not found.' })
   update(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
@@ -125,38 +124,38 @@ export class UsersController {
 
   @Patch(':id/deactivate')
   @ApiOperation({ summary: 'Deactivate a user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully deactivated.',
   })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  deactivate(@Param('id', ParseIntPipe) id: string) {
+  deactivate(@Param('id') id: string) {
     return this.usersService.deactivate(id);
   }
 
   @Patch(':id/activate')
   @ApiOperation({ summary: 'Activate a user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully activated.',
   })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  activate(@Param('id', ParseIntPipe) id: string) {
+  activate(@Param('id') id: string) {
     return this.usersService.activate(id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a user' })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'User ID (UUID)' })
   @ApiResponse({
     status: 204,
     description: 'The user has been successfully deleted.',
   })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  remove(@Param('id', ParseIntPipe) id: string) {
+  remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 }
