@@ -256,7 +256,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     await this.findOne(id);
-    const dataToUpdate: Partial<CreateUserDto> = {};
+    const dataToUpdate: any = {};
 
     // Map all updatable fields
     if (updateUserDto.email !== undefined)
@@ -280,7 +280,7 @@ export class UsersService {
     if (updateUserDto.address !== undefined)
       dataToUpdate.address = updateUserDto.address;
     if (updateUserDto.date_of_birth !== undefined)
-      dataToUpdate.date_of_birth = new Date(updateUserDto.date_of_birth);
+      dataToUpdate.date_of_birth = updateUserDto.date_of_birth.toString();
     if (updateUserDto.biography !== undefined)
       dataToUpdate.biography = updateUserDto.biography;
     if (updateUserDto.emergency_contact_name !== undefined)
@@ -309,6 +309,7 @@ export class UsersService {
     if (updateUserDto.education !== undefined)
       dataToUpdate.education = updateUserDto.education;
     if (updateUserDto.social_media_links !== undefined)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       dataToUpdate.social_media_links = updateUserDto.social_media_links;
     if (updateUserDto.password !== undefined) {
       dataToUpdate.password = await bcrypt.hash(updateUserDto.password, 10);

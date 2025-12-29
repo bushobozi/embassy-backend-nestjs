@@ -10,7 +10,15 @@ interface JwtPayload {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: true,
+    rawBody: true,
+  });
+
+  // Increase body size limit for file uploads (default is 100kb)
+  // This allows up to 50MB for profile pictures and other uploads
+  app.use(require('express').json({ limit: '50mb' }));
+  app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
 
   // Enable CORS for cross-origin requests
   app.enableCors({
