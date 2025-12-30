@@ -10,11 +10,12 @@ interface JwtPayload {
   [key: string]: any;
 }
 
-async function bootstrap() {
+async function createApp() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
     rawBody: true,
   });
+
   app.use(express.json({ limit: '70mb' }));
   app.use(express.urlencoded({ limit: '70mb', extended: true }));
 
@@ -94,7 +95,10 @@ async function bootstrap() {
     }
 
     if (!token) {
-      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer realm="Swagger Documentation"',
+      );
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied',
@@ -122,7 +126,10 @@ async function bootstrap() {
       next();
     } catch (error) {
       console.error('JWT verification error:', error);
-      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer realm="Swagger Documentation"',
+      );
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied.',
@@ -137,12 +144,28 @@ async function bootstrap() {
     customSiteTitle: 'Embassy System API Docs',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.init();
+  return app;
 }
 
-// For Vercel serverless deployment
-if (process.env.VERCEL) {
-  bootstrap();
-} else {
-  void bootstrap();
+// Cache Nest HTTP server between Vercel invocations
+let cachedServer: any;
+
+export default async function handler(req: any, res: any) {
+  if (!cachedServer) {
+    const app = await createApp();
+    cachedServer = app.getHttpAdapter().getInstance();
+  }
+
+  return cachedServer(req, res);
+}
+
+// Local / non-Vercel environment: start a regular HTTP server
+if (!process.env.VERCEL) {
+  createApp()
+    .then((app) => app.listen(process.env.PORT ?? 3000))
+    .catch((err) => {
+      console.error('Error starting app:', err);
+      process.exit(1);
+    });
 }
