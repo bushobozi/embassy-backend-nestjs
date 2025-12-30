@@ -30,7 +30,8 @@ async function bootstrap() {
   });
 
   // Add global prefix for all routes
-  app.setGlobalPrefix('api/v1');
+  const GLOBAL_PREFIX = 'api/v1';
+  app.setGlobalPrefix(GLOBAL_PREFIX);
 
   const config = new DocumentBuilder()
     .setTitle('Embassy System MVP API')
@@ -51,9 +52,13 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'swagger_docs/embassy/';
+
+  // Swagger path configuration
+  const swaggerPath = 'swagger_docs/embassy';
+  const swaggerFullPath = `/${GLOBAL_PREFIX}/${swaggerPath}`;
+
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.includes(swaggerPath)) {
+    if (!req.path.startsWith(swaggerFullPath)) {
       return next();
     }
     if (
