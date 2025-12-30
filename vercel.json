@@ -2,25 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/main.js",
+      "src": "package.json",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/v1/swagger_docs/embassy(.*)",
-      "dest": "dist/main.js"
-    },
-    {
-      "src": "/api/v1/(.*)",
-      "dest": "dist/main.js"
-    },
-    {
       "src": "/(.*)",
       "dest": "dist/main.js"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
