@@ -29,9 +29,11 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
-  // Add global prefix for all routes
+  // Add global prefix for all routes except the root login page
   const GLOBAL_PREFIX = 'api/v1';
-  app.setGlobalPrefix(GLOBAL_PREFIX);
+  app.setGlobalPrefix(GLOBAL_PREFIX, {
+    exclude: ['/'], // Exclude root path for login page
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Embassy System MVP API')
@@ -66,6 +68,15 @@ async function bootstrap() {
 
   // Add authentication middleware AFTER Swagger setup
   app.use((req: Request, res: Response, next: NextFunction) => {
+    // Allow auth endpoints without authentication (login, register, refresh)
+    if (
+      req.path.startsWith('/api/v1/auth/login') ||
+      req.path.startsWith('/api/v1/auth/register') ||
+      req.path.startsWith('/api/v1/auth/refresh')
+    ) {
+      return next();
+    }
+
     // Normalize path by removing trailing slash for comparison
     const normalizedPath = req.path.replace(/\/$/, '');
 
@@ -157,7 +168,9 @@ async function getServerlessApp() {
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     });
 
-    app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api/v1', {
+      exclude: ['/'], // Exclude root path for login page
+    });
 
     const config = new DocumentBuilder()
       .setTitle('Embassy System MVP API')
@@ -180,6 +193,15 @@ async function getServerlessApp() {
     const document = SwaggerModule.createDocument(app, config);
     const swaggerPath = 'swagger_docs/embassy';
     app.use((req: Request, res: Response, next: NextFunction) => {
+      // Allow auth endpoints without authentication (login, register, refresh)
+      if (
+        req.path.startsWith('/api/v1/auth/login') ||
+        req.path.startsWith('/api/v1/auth/register') ||
+        req.path.startsWith('/api/v1/auth/refresh')
+      ) {
+        return next();
+      }
+
       if (!req.path.includes(swaggerPath)) {
         return next();
       }
@@ -266,7 +288,7 @@ if (!process.env.VERCEL) {
 export default async (req: express.Request, res: express.Response) => {
   try {
     const server = await getServerlessApp();
-    server(req, res, () => {});
+    server(req, res, () => { });
   } catch (error) {
     console.error('Serverless function error:', error);
     res.status(500).json({
