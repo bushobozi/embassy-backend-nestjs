@@ -4,21 +4,21 @@ import { Public } from './auth/decorators/public.decorator';
 
 @Controller()
 export class AppController {
-  constructor() {}
+    constructor() { }
 
-  @Public()
-  @Get()
-  getLoginPage(@Res() res: Response, @Req() req: Request): void {
-    // If user is already logged in (has valid token), redirect to swagger docs
-    const authHeader = req.headers.authorization;
+    @Public()
+    @Get()
+    getLoginPage(@Res() res: Response, @Req() req: Request): void {
+        // If user is already logged in (has valid token), redirect to swagger docs
+        const authHeader = req.headers.authorization;
 
-    if (authHeader?.startsWith('Bearer ')) {
-      res.redirect('/api/v1/');
-      return;
-    }
+        if (authHeader?.startsWith('Bearer ')) {
+            res.redirect('/api/v1/');
+            return;
+        }
 
-    // Return HTML login page
-    const html = `
+        // Return HTML login page
+        const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -224,9 +224,9 @@ export class AppController {
                     successMessage.textContent = 'Login successful! Redirecting to dashboard...';
                     successMessage.style.display = 'block';
 
-                    // Redirect to Swagger docs
+                    // Redirect to Swagger docs with trailing slash
                     setTimeout(() => {
-                        window.location.href = '/api/v1?token=' + data.access_token;
+                        window.location.href = '/api/v1/?token=' + data.access_token;
                     }, 1000);
                 } else {
                     throw new Error(data.message || 'Invalid credentials');
@@ -243,7 +243,7 @@ export class AppController {
 </html>
     `;
 
-    res.setHeader('Content-Type', 'text/html');
-    res.send(html);
-  }
+        res.setHeader('Content-Type', 'text/html');
+        res.send(html);
+    }
 }
