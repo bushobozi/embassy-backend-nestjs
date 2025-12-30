@@ -114,7 +114,7 @@ async function bootstrap() {
     }
   });
 
-  SwaggerModule.setup(swaggerPath, app, document, {
+  SwaggerModule.setup(`api/v1/${swaggerPath}`, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
