@@ -10,7 +10,7 @@ interface JwtPayload {
   [key: string]: any;
 }
 
-async function bootstrap() {
+async function createApp() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
     rawBody: true,
@@ -19,8 +19,27 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Enable CORS for cross-origin requests
+  const allowedOrigins =
+    process.env.VITE_HOSTS?.split(',').map((origin) =>
+      origin.trim().replace(/\/$/, ''),
+    ) || [];
+
   app.enableCors({
-    origin: process.env.VITE_HOSTS?.split(','),
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log('Blocked origin:', origin);
+        console.log('Allowed origins:', allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -48,9 +67,9 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'api/v1/swagger_docs/embassy';
+  const swaggerPath = 'swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(`/${swaggerPath}`)) {
+    if (!req.path.startsWith(`/api/v1/${swaggerPath}`)) {
       return next();
     }
     if (
@@ -75,7 +94,10 @@ async function bootstrap() {
     }
 
     if (!token) {
-      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer realm="Swagger Documentation"',
+      );
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied',
@@ -103,7 +125,10 @@ async function bootstrap() {
       next();
     } catch (error) {
       console.error('JWT verification error:', error);
-      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer realm="Swagger Documentation"',
+      );
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied.',
@@ -111,19 +136,36 @@ async function bootstrap() {
     }
   });
 
-  SwaggerModule.setup(swaggerPath, app, document, {
+  SwaggerModule.setup(`api/v1/${swaggerPath}`, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
     customSiteTitle: 'Embassy System API Docs',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.init();
+  return app;
 }
 
-// For Vercel serverless deployment
-if (process.env.VERCEL) {
-  bootstrap();
-} else {
-  void bootstrap();
+// Cache Nest HTTP server between Vercel invocations
+let cachedServer: any;
+
+export default async function handler(req: any, res: any) {
+  if (!cachedServer) {
+    const app = await createApp();
+    cachedServer = app.getHttpAdapter().getInstance();
+  }
+
+  return cachedServer(req, res);
 }
+
+// Local / non-Vercel environment: start a regular HTTP server
+if (!process.env.VERCEL) {
+  createApp()
+    .then((app) => app.listen(process.env.PORT ?? 3000))
+    .catch((err) => {
+      console.error('Error starting app:', err);
+      process.exit(1);
+    });
+}
+
