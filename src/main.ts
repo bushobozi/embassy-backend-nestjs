@@ -51,9 +51,10 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'api/v1/swagger_docs/embassy';
+  const swaggerPath = 'swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(`/${swaggerPath}`)) {
+    // Check path without leading slash and without api/v1 prefix
+    if (!req.path.includes(swaggerPath)) {
       return next();
     }
     if (
@@ -117,14 +118,8 @@ async function bootstrap() {
   SwaggerModule.setup(swaggerPath, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
-      url: `/${swaggerPath}-json`,
     },
     customSiteTitle: 'Embassy System API Docs',
-    customCssUrl: `/${swaggerPath}/swagger-ui.css`,
-    customJs: [
-      `/${swaggerPath}/swagger-ui-bundle.js`,
-      `/${swaggerPath}/swagger-ui-standalone-preset.js`,
-    ],
   });
 
   await app.listen(process.env.PORT ?? 3000);
