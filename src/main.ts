@@ -3,6 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
 
 interface JwtPayload {
   role: string;
@@ -17,8 +18,8 @@ async function bootstrap() {
 
   // Increase body size limit for file uploads (default is 100kb)
   // This allows up to 50MB for profile pictures and other uploads
-  app.use(require('express').json({ limit: '50mb' }));
-  app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Enable CORS for cross-origin requests
   app.enableCors({
