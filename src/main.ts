@@ -70,7 +70,7 @@ async function createApp() {
   const document = SwaggerModule.createDocument(app, config);
   const swaggerPath = 'swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(`/${swaggerPath}`)) {
+    if (!req.path.startsWith(`/api/v1/${swaggerPath}`)) {
       return next();
     }
     if (
@@ -137,7 +137,7 @@ async function createApp() {
     }
   });
 
-  SwaggerModule.setup(swaggerPath, app, document, {
+  SwaggerModule.setup(`api/v1/${swaggerPath}`, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
@@ -170,10 +170,3 @@ if (!process.env.VERCEL) {
     });
 }
 
-// Export for Vercel
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-export default async (req: express.Request, res: express.Response) => {
-  const serverInstance = await getServer();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-  return serverInstance(req, res);
-};
