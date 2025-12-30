@@ -130,7 +130,7 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 
-// For Vercel serverless deployment
+// For Vercel serverless deployment - reset changes
 if (process.env.VERCEL) {
   bootstrap();
 } else {
