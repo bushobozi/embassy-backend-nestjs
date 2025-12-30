@@ -13,9 +13,7 @@ export class AppController {
     const authHeader = req.headers.authorization;
 
     if (authHeader?.startsWith('Bearer ')) {
-      const swaggerPath = process.env.VERCEL
-        ? '/swagger_docs/embassy/'
-        : '/api/v1/';
+      const swaggerPath = '/api/v1/';
       res.redirect(swaggerPath);
       return;
     }
@@ -229,9 +227,7 @@ export class AppController {
 
                     // Redirect to Swagger docs with trailing slash
                     // Use different paths for development vs production
-                    const swaggerPath = process.env.VERCEL 
-                        ? '/swagger_docs/embassy/?token=' 
-                        : '/api/v1/?token=';
+                    const swaggerPath = '/api/v1/?token=';
                     
                     setTimeout(() => {
                         window.location.href = swaggerPath + data.access_token;
