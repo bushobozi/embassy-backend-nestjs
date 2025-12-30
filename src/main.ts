@@ -191,7 +191,18 @@ async function getServerlessApp() {
       )
       .build();
     const document = SwaggerModule.createDocument(app, config);
-    const swaggerPath = 'swagger_docs/embassy';
+    const GLOBAL_PREFIX = 'api/v1';
+    const swaggerFullPath = `/${GLOBAL_PREFIX}`;
+
+    // Set up Swagger FIRST (before authentication middleware)
+    SwaggerModule.setup(GLOBAL_PREFIX, app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+      customSiteTitle: 'Embassy System API Docs',
+    });
+
+    // Add authentication middleware AFTER Swagger setup
     app.use((req: Request, res: Response, next: NextFunction) => {
       // Allow auth endpoints without authentication (login, register, refresh)
       if (
@@ -202,9 +213,14 @@ async function getServerlessApp() {
         return next();
       }
 
-      if (!req.path.includes(swaggerPath)) {
+      // Normalize path by removing trailing slash for comparison
+      const normalizedPath = req.path.replace(/\/$/, '');
+
+      if (!normalizedPath.startsWith(swaggerFullPath)) {
         return next();
       }
+
+      // Allow static assets through without authentication
       if (
         req.path.includes('.css') ||
         req.path.includes('.js') ||
@@ -217,6 +233,7 @@ async function getServerlessApp() {
       ) {
         return next();
       }
+
       let token: string | undefined;
       const authHeader = req.headers.authorization;
 
@@ -265,13 +282,6 @@ async function getServerlessApp() {
       }
     });
 
-    SwaggerModule.setup(swaggerPath, app, document, {
-      swaggerOptions: {
-        persistAuthorization: true,
-      },
-      customSiteTitle: 'Embassy System API Docs',
-    });
-
     await app.init();
     cachedServer = app.getHttpAdapter().getInstance() as express.Express;
   }
@@ -288,7 +298,7 @@ if (!process.env.VERCEL) {
 export default async (req: express.Request, res: express.Response) => {
   try {
     const server = await getServerlessApp();
-    server(req, res, () => { });
+    server(req, res, () => {});
   } catch (error) {
     console.error('Serverless function error:', error);
     res.status(500).json({
