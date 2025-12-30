@@ -255,14 +255,13 @@ async function getServerlessApp() {
   return cachedServer;
 }
 
-// For Vercel serverless deployment
-if (process.env.VERCEL) {
-  // Export handler for Vercel
-  module.exports = async (req: express.Request, res: express.Response) => {
-    const server = await getServerlessApp();
-    server(req, res, () => {});
-  };
-} else {
-  // For local development
+// Export default handler for Vercel
+export default async (req: express.Request, res: express.Response) => {
+  const server = await getServerlessApp();
+  server(req, res, () => {});
+};
+
+// For local development
+if (!process.env.VERCEL) {
   void bootstrap();
 }
