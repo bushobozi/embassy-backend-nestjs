@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
+// Global pool for serverless environments to prevent connection exhaustion
+let globalPool: Pool | null = null;
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -14,8 +17,14 @@ export class PrismaService
       throw new Error('DATABASE_URL is not set');
     }
 
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
+    // Reuse existing pool in serverless environments
+    if (!globalPool) {
+      globalPool = new Pool({
+        connectionString,
+        max: 1, // Limit connections in serverless
+      });
+    }
+    const adapter = new PrismaPg(globalPool);
 
     super({ adapter: adapter as any });
   }

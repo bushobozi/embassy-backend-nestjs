@@ -157,6 +157,15 @@ async function bootstrap(): Promise<Express> {
 }
 
 export default async (req: Request, res: Response): Promise<void> => {
-  const server = await bootstrap();
-  server(req, res, () => {});
+  try {
+    const server = await bootstrap();
+    server(req, res, () => {});
+  } catch (error) {
+    console.error('Serverless function error:', error);
+    res.status(500).json({
+      statusCode: 500,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
 };
