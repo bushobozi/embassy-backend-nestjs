@@ -13,7 +13,8 @@ export class AppController {
         const authHeader = req.headers.authorization;
 
         if (authHeader?.startsWith('Bearer ')) {
-            res.redirect('/api/v1/');
+            const swaggerPath = process.env.VERCEL ? '/swagger_docs/embassy/' : '/api/v1/';
+            res.redirect(swaggerPath);
             return;
         }
 
@@ -225,8 +226,13 @@ export class AppController {
                     successMessage.style.display = 'block';
 
                     // Redirect to Swagger docs with trailing slash
+                    // Use different paths for development vs production
+                    const swaggerPath = process.env.VERCEL 
+                        ? '/swagger_docs/embassy/?token=' 
+                        : '/api/v1/?token=';
+                    
                     setTimeout(() => {
-                        window.location.href = '/api/v1/?token=' + data.access_token;
+                        window.location.href = swaggerPath + data.access_token;
                     }, 1000);
                 } else {
                     throw new Error(data.message || 'Invalid credentials');
