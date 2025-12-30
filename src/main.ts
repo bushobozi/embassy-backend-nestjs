@@ -15,9 +15,6 @@ async function bootstrap() {
     bodyParser: true,
     rawBody: true,
   });
-
-  // Increase body size limit for file uploads (default is 100kb)
-  // This allows up to 50MB for profile pictures and other uploads
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
