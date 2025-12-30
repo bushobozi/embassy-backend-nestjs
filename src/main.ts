@@ -10,37 +10,20 @@ interface JwtPayload {
   [key: string]: any;
 }
 
-async function createApp() {
+async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
     rawBody: true,
   });
 
-  app.use(express.json({ limit: '70mb' }));
-  app.use(express.urlencoded({ limit: '70mb', extended: true }));
+  // Increase body size limit for file uploads (default is 100kb)
+  // This allows up to 50MB for profile pictures and other uploads
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Enable CORS for cross-origin requests
-  const allowedOrigins =
-    process.env.VITE_HOSTS?.split(',').map((origin) =>
-      origin.trim().replace(/\/$/, ''),
-    ) || [];
-
   app.enableCors({
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void,
-    ) => {
-      // Allow requests with no origin (like mobile apps or Postman)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log('Blocked origin:', origin);
-        console.log('Allowed origins:', allowedOrigins);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: process.env.VITE_HOSTS?.split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -68,9 +51,9 @@ async function createApp() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'swagger_docs/embassy';
+  const swaggerPath = 'api/v1/swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(`/api/v1/${swaggerPath}`)) {
+    if (!req.path.startsWith(`/${swaggerPath}`)) {
       return next();
     }
     if (
@@ -95,10 +78,7 @@ async function createApp() {
     }
 
     if (!token) {
-      res.setHeader(
-        'WWW-Authenticate',
-        'Bearer realm="Swagger Documentation"',
-      );
+      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied',
@@ -126,10 +106,7 @@ async function createApp() {
       next();
     } catch (error) {
       console.error('JWT verification error:', error);
-      res.setHeader(
-        'WWW-Authenticate',
-        'Bearer realm="Swagger Documentation"',
-      );
+      res.setHeader('WWW-Authenticate', 'Bearer realm="Swagger Documentation"');
       return res.status(403).json({
         statusCode: 403,
         message: 'Access denied.',
@@ -137,36 +114,19 @@ async function createApp() {
     }
   });
 
-  SwaggerModule.setup(`api/v1/${swaggerPath}`, app, document, {
+  SwaggerModule.setup(swaggerPath, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
     customSiteTitle: 'Embassy System API Docs',
   });
 
-  await app.init();
-  return app;
+  await app.listen(process.env.PORT ?? 3000);
 }
 
-// Cache Nest HTTP server between Vercel invocations
-let cachedServer: any;
-
-export default async function handler(req: any, res: any) {
-  if (!cachedServer) {
-    const app = await createApp();
-    cachedServer = app.getHttpAdapter().getInstance();
-  }
-
-  return cachedServer(req, res);
+// For Vercel serverless deployment
+if (process.env.VERCEL) {
+  bootstrap();
+} else {
+  void bootstrap();
 }
-
-// Local / non-Vercel environment: start a regular HTTP server
-if (!process.env.VERCEL) {
-  createApp()
-    .then((app) => app.listen(process.env.PORT ?? 3000))
-    .catch((err) => {
-      console.error('Error starting app:', err);
-      process.exit(1);
-    });
-}
-
