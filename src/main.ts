@@ -51,9 +51,8 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'swagger_docs/embassy';
+  const swaggerPath = 'swagger_docs/embassy/';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    // Check path without leading slash and without api/v1 prefix
     if (!req.path.includes(swaggerPath)) {
       return next();
     }
@@ -255,11 +254,19 @@ async function getServerlessApp() {
   return cachedServer;
 }
 
-// Export default handler for Vercel
-export default async (req: express.Request, res: express.Response) => {
+// Export handler for Vercel (both ES and CommonJS)
+const handler = async (req: express.Request, res: express.Response) => {
   const server = await getServerlessApp();
   server(req, res, () => {});
 };
+
+export default handler;
+// For Vercel CommonJS compatibility
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = handler;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  (module.exports as Record<string, unknown>).default = handler;
+}
 
 // For local development
 if (!process.env.VERCEL) {
