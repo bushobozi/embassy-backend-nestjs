@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto } from './export-users';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -256,8 +257,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     await this.findOne(id);
-    const dataToUpdate: any = {};
-
+    const dataToUpdate: Prisma.UserUpdateInput = {};
     // Map all updatable fields
     if (updateUserDto.email !== undefined)
       dataToUpdate.email = updateUserDto.email;
@@ -309,7 +309,6 @@ export class UsersService {
     if (updateUserDto.education !== undefined)
       dataToUpdate.education = updateUserDto.education;
     if (updateUserDto.social_media_links !== undefined)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       dataToUpdate.social_media_links = updateUserDto.social_media_links;
     if (updateUserDto.password !== undefined) {
       dataToUpdate.password = await bcrypt.hash(updateUserDto.password, 10);
