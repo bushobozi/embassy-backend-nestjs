@@ -4,22 +4,24 @@ import { Public } from './auth/decorators/public.decorator';
 
 @Controller()
 export class AppController {
-    constructor() { }
+  constructor() {}
 
-    @Public()
-    @Get()
-    getLoginPage(@Res() res: Response, @Req() req: Request): void {
-        // If user is already logged in (has valid token), redirect to swagger docs
-        const authHeader = req.headers.authorization;
+  @Public()
+  @Get()
+  getLoginPage(@Res() res: Response, @Req() req: Request): void {
+    // If user is already logged in (has valid token), redirect to swagger docs
+    const authHeader = req.headers.authorization;
 
-        if (authHeader?.startsWith('Bearer ')) {
-            const swaggerPath = process.env.VERCEL ? '/swagger_docs/embassy/' : '/api/v1/';
-            res.redirect(swaggerPath);
-            return;
-        }
+    if (authHeader?.startsWith('Bearer ')) {
+      const swaggerPath = process.env.VERCEL
+        ? '/swagger_docs/embassy/'
+        : '/api/v1/';
+      res.redirect(swaggerPath);
+      return;
+    }
 
-        // Return HTML login page
-        const html = `
+    // Return HTML login page
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -249,7 +251,7 @@ export class AppController {
 </html>
     `;
 
-        res.setHeader('Content-Type', 'text/html');
-        res.send(html);
-    }
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  }
 }
