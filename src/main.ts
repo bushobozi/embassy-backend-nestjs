@@ -48,6 +48,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
+  // Add global prefix for all routes
+  app.setGlobalPrefix('api/v1');
+
   const config = new DocumentBuilder()
     .setTitle('Embassy System MVP API')
     .setDescription(
@@ -69,7 +72,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   const swaggerPath = 'swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (!req.path.startsWith(`/api/v1/${swaggerPath}`)) {
+    if (!req.path.startsWith(`/${swaggerPath}`)) {
       return next();
     }
     if (
@@ -130,15 +133,12 @@ async function bootstrap() {
     }
   });
 
-  SwaggerModule.setup(`api/v1/${swaggerPath}`, app, document, {
+  SwaggerModule.setup(swaggerPath, app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
     customSiteTitle: 'Embassy System API Docs',
   });
-
-  // Add global prefix for all routes AFTER Swagger setup
-  app.setGlobalPrefix('api/v1');
 
   await app.listen(process.env.PORT ?? 3000);
 }
