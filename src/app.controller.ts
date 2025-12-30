@@ -13,7 +13,7 @@ export class AppController {
     const authHeader = req.headers.authorization;
 
     if (authHeader?.startsWith('Bearer ')) {
-      res.redirect('/api/v1/swagger_docs/embassy/');
+      res.redirect('/api/v1/');
       return;
     }
 
@@ -226,7 +226,7 @@ export class AppController {
 
                     // Redirect to Swagger docs
                     setTimeout(() => {
-                        window.location.href = '/api/v1/swagger_docs/embassy/?token=' + data.access_token;
+                        window.location.href = '/api/v1?token=' + data.access_token;
                     }, 1000);
                 } else {
                     throw new Error(data.message || 'Invalid credentials');
