@@ -8,7 +8,7 @@
   ],
   "routes": [
     {
-      "src": "/api/v1/swagger_docs/(.*)",
+      "src": "/api/v1/swagger_docs/embassy(.*)",
       "dest": "dist/main.js"
     },
     {

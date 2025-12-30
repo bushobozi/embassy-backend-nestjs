@@ -51,7 +51,7 @@ async function bootstrap() {
     )
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  const swaggerPath = 'swagger_docs/embassy';
+  const swaggerPath = 'api/v1/swagger_docs/embassy';
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (!req.path.startsWith(`/${swaggerPath}`)) {
       return next();
