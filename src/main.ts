@@ -261,7 +261,7 @@ export default async (req: express.Request, res: express.Response) => {
   server(req, res, () => {});
 };
 
-// For local development
+// For local developments
 if (!process.env.VERCEL) {
   void bootstrap();
 }
