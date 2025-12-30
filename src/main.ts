@@ -120,11 +120,11 @@ async function bootstrap() {
       url: `/${swaggerPath}-json`,
     },
     customSiteTitle: 'Embassy System API Docs',
-    customCssUrl: `/${swaggerPath}/swagger-ui.css`,
-    customJs: [
-      `/${swaggerPath}/swagger-ui-bundle.js`,
-      `/${swaggerPath}/swagger-ui-standalone-preset.js`,
-    ],
+    // customCssUrl: `/${swaggerPath}/swagger-ui.css`,
+    // customJs: [
+    //   `/${swaggerPath}/swagger-ui-bundle.js`,
+    //   `/${swaggerPath}/swagger-ui-standalone-preset.js`,
+    // ],
   });
 
   await app.listen(process.env.PORT ?? 3000);
