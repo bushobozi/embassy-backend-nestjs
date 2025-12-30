@@ -195,11 +195,18 @@ async function getServerlessApp() {
     const swaggerFullPath = `/${GLOBAL_PREFIX}`;
 
     // Set up Swagger FIRST (before authentication middleware)
+    // Use CDN assets for serverless compatibility
     SwaggerModule.setup(GLOBAL_PREFIX, app, document, {
       swaggerOptions: {
         persistAuthorization: true,
       },
       customSiteTitle: 'Embassy System API Docs',
+      customCssUrl:
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+      customJs: [
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
+      ],
     });
 
     // Add authentication middleware AFTER Swagger setup
