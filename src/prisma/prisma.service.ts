@@ -26,7 +26,7 @@ export class PrismaService
     }
     const adapter = new PrismaPg(globalPool);
 
-    super({ adapter: adapter as any });
+    super({ adapter });
   }
 
   async onModuleInit() {
