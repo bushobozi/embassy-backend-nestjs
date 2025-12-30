@@ -48,9 +48,6 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
-  // Add global prefix for all routes
-  app.setGlobalPrefix('api/v1');
-
   const config = new DocumentBuilder()
     .setTitle('Embassy System MVP API')
     .setDescription(
@@ -139,6 +136,9 @@ async function bootstrap() {
     },
     customSiteTitle: 'Embassy System API Docs',
   });
+
+  // Add global prefix for all routes AFTER Swagger setup
+  app.setGlobalPrefix('api/v1');
 
   await app.listen(process.env.PORT ?? 3000);
 }
