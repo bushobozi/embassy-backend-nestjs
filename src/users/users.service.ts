@@ -17,6 +17,7 @@ export class UsersService {
     last_name: true,
     role: true,
     is_active: true,
+    embassy_id: true, // ADD THIS LINE
     phone_number: true,
     work_phone_number: true,
     work_email: true,
@@ -66,6 +67,7 @@ export class UsersService {
       data: {
         email: createUserDto.email,
         password: hashedPassword,
+        embassy_id: createUserDto.embassy_id, // ADD THIS LINE
         first_name: createUserDto.first_name,
         middle_name: createUserDto.middle_name,
         last_name: createUserDto.last_name,
@@ -75,9 +77,7 @@ export class UsersService {
         work_phone_number: createUserDto.work_phone_number,
         work_email: createUserDto.work_email,
         address: createUserDto.address,
-        date_of_birth: createUserDto.date_of_birth
-          ? createUserDto.date_of_birth.toString()
-          : null,
+        date_of_birth: createUserDto.date_of_birth || null,
         biography: createUserDto.biography,
         emergency_contact_name: createUserDto.emergency_contact_name,
         emergency_contact_phone_number:
@@ -120,9 +120,7 @@ export class UsersService {
   async findByEmbassy(embassyId: string) {
     return this.prisma.user.findMany({
       where: {
-        staff_profile: {
-          embassy_id: embassyId,
-        },
+        embassy_id: embassyId,
       },
       select: this.userSelect,
     });
@@ -180,6 +178,11 @@ export class UsersService {
     // Map all updatable fields
     if (updateUserDto.email !== undefined)
       dataToUpdate.email = updateUserDto.email;
+    if (updateUserDto.embassy_id !== undefined) {
+      dataToUpdate.embassy = {
+        connect: { id: updateUserDto.embassy_id },
+      };
+    }
     if (updateUserDto.first_name !== undefined)
       dataToUpdate.first_name = updateUserDto.first_name;
     if (updateUserDto.middle_name !== undefined)
@@ -199,7 +202,7 @@ export class UsersService {
     if (updateUserDto.address !== undefined)
       dataToUpdate.address = updateUserDto.address;
     if (updateUserDto.date_of_birth !== undefined)
-      dataToUpdate.date_of_birth = updateUserDto.date_of_birth.toString();
+      dataToUpdate.date_of_birth = updateUserDto.date_of_birth;
     if (updateUserDto.biography !== undefined)
       dataToUpdate.biography = updateUserDto.biography;
     if (updateUserDto.emergency_contact_name !== undefined)
