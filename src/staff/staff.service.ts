@@ -199,20 +199,18 @@ export class StaffService {
       throw new BadRequestException('Last name is required');
     }
 
-    // Get the creator's staff profile to verify they have permission and get embassy_id
-    const creatorStaff = await this.prisma.staff.findUnique({
-      where: { user_id: creatorUserId },
-      select: { embassy_id: true },
+    // Get the creator user to verify they exist and get their embassy_id
+    const creator = await this.prisma.user.findUnique({
+      where: { id: creatorUserId },
+      select: { embassy_id: true, role: true },
     });
 
-    if (!creatorStaff) {
-      throw new BadRequestException(
-        'Only staff members can create new staff profiles',
-      );
+    if (!creator) {
+      throw new BadRequestException('Creator user not found');
     }
 
-    // Use embassy_id from creator's profile or from DTO
-    const embassy_id = createStaffDto.embassy_id || creatorStaff.embassy_id;
+    // Use embassy_id from DTO or fall back to creator's embassy_id
+    const embassy_id = createStaffDto.embassy_id || creator.embassy_id;
 
     // Validate embassy_id
     if (!embassy_id) {
