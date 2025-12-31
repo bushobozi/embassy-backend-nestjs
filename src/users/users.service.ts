@@ -37,25 +37,11 @@ export class UsersService {
     social_media_links: true,
     created_at: true,
     updated_at: true,
-    staff_profile: {
-      select: {
-        embassy_id: true,
-      },
-    },
   };
 
   async findAll() {
-    const users = await this.prisma.user.findMany({
+    return this.prisma.user.findMany({
       select: this.userSelect,
-    });
-
-    // Map to include embassy_id from staff profile
-    return users.map((user) => {
-      const { staff_profile, ...userData } = user;
-      return {
-        ...userData,
-        embassy_id: (staff_profile?.embassy_id as string) || null,
-      };
     });
   }
 
@@ -69,18 +55,13 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    const { staff_profile, ...userData } = user;
-    return {
-      ...userData,
-      embassy_id: (staff_profile?.embassy_id as string) || null,
-    };
+    return user;
   }
 
   async create(createUserDto: CreateUserDto) {
     // Hash password before saving
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-    // Map all fields from DTO to schema
     const user = await this.prisma.user.create({
       data: {
         email: createUserDto.email,
@@ -113,40 +94,11 @@ export class UsersService {
         certifications: createUserDto.certifications || [],
         previous_employers: createUserDto.previous_employers || [],
         education: createUserDto.education || [],
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         social_media_links: createUserDto.social_media_links
-          ? (createUserDto.social_media_links as any)
+          ? createUserDto.social_media_links
           : undefined,
       },
-      select: {
-        id: true,
-        email: true,
-        first_name: true,
-        middle_name: true,
-        last_name: true,
-        role: true,
-        is_active: true,
-        phone_number: true,
-        work_phone_number: true,
-        work_email: true,
-        address: true,
-        date_of_birth: true,
-        biography: true,
-        emergency_contact_name: true,
-        emergency_contact_phone_number: true,
-        emergency_contact_relationship: true,
-        department: true,
-        position: true,
-        hire_date: true,
-        profile_picture: true,
-        languages: true,
-        certifications: true,
-        previous_employers: true,
-        education: true,
-        social_media_links: true,
-        created_at: true,
-        updated_at: true,
-      },
+      select: this.userSelect,
     });
 
     return user;
@@ -162,39 +114,18 @@ export class UsersService {
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
-    const { staff_profile, ...userData } = user;
-    return {
-      ...userData,
-      embassy_id: (staff_profile?.embassy_id as string) || null,
-    };
+    return user;
   }
 
   async findByEmbassy(embassyId: string) {
-    // Find staff members for this embassy, then get their users
-    const staff = await this.prisma.staff.findMany({
+    return this.prisma.user.findMany({
       where: {
-        embassy_id: embassyId,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            first_name: true,
-            last_name: true,
-            role: true,
-            is_active: true,
-            created_at: true,
-            updated_at: true,
-          },
+        staff_profile: {
+          embassy_id: embassyId,
         },
       },
+      select: this.userSelect,
     });
-
-    return staff.map((s) => ({
-      ...s.user,
-      embassy_id: s.embassy_id,
-    }));
   }
 
   async findByRole(role: string) {
@@ -203,13 +134,7 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return users.map((user) => {
-      const { staff_profile, ...userData } = user;
-      return {
-        ...userData,
-        embassy_id: (staff_profile?.embassy_id as string) || null,
-      };
-    });
+    return users;
   }
 
   async findActive() {
@@ -218,13 +143,7 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    return users.map((user) => {
-      const { staff_profile, ...userData } = user;
-      return {
-        ...userData,
-        embassy_id: (staff_profile?.embassy_id as string) || null,
-      };
-    });
+    return users;
   }
 
   async findByDepartment(department: string) {
@@ -320,11 +239,7 @@ export class UsersService {
       select: this.userSelect,
     });
 
-    const { staff_profile, ...userData } = user;
-    return {
-      ...userData,
-      embassy_id: (staff_profile?.embassy_id as string) || null,
-    };
+    return user;
   }
 
   async remove(id: string) {
