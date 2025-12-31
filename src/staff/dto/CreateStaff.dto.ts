@@ -2,9 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateStaffDto {
   @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    description: 'The photo of the staff member',
+    example: 'https://example.com/photo.jpg',
+    description: 'The photo URL of the staff member',
     required: false,
   })
   photo?: string;

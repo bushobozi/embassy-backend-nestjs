@@ -160,10 +160,11 @@ model Task {
 
 // Staff
 model Staff {
-  id             String    @id @default(uuid())
+    id             String    @id @default(uuid())
   user_id        String    @unique
   embassy_id     String
   first_name     String
+  middle_name    String?
   last_name      String
   email          String    @unique
   phone          String?
@@ -173,11 +174,51 @@ model Staff {
   religion       String?
   marital_status String?
   country        String?
+  city           String?
   nationality    String?
   staff_status   String    @default("active") // active, inactive, on_leave, retired
+  
+  // Date fields
   hire_date      DateTime?
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
+  date_of_birth  String?
+  
+  // Additional contact info
+  address        String?
+  work_email     String?
+  work_phone     String?
+  
+  // Skills and qualifications
+  languages_spoken            String?
+  skills                      String?
+  academic_qualifications     String?
+  professional_qualifications String?
+  
+  // Emergency contact
+  emergency_contact_name         String?
+  emergency_contact_relationship String?
+  emergency_contact_phone        String?
+  
+  // Next of kin
+  next_of_kin_name         String?
+  next_of_kin_relationship String?
+  next_of_kin_phone        String?
+  
+  // ID Information
+  id_type        String?
+  id_number      String?
+  id_issue_date  String?
+  id_expiry_date String?
+  
+  // Transfer information
+  is_transferred  Boolean   @default(false)
+  transfer_date   DateTime?
+  transfer_reason String?
+  
+  // Profile
+  photo String?
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Relations
   user    User    @relation(fields: [user_id], references: [id])
