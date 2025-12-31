@@ -400,6 +400,11 @@ export class StaffService {
     // Check if staff exists
     await this.findOne(id);
 
+    // Validate updateStaffDto is not null or undefined
+    if (!updateStaffDto) {
+      throw new BadRequestException('Update data is required');
+    }
+
     // Helper function to safely parse dates
     const parseDate = (dateString?: string) => {
       if (!dateString || dateString.trim() === '') return null;
