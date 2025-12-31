@@ -17,6 +17,7 @@ model User {
   role          String   @default("user") // super_admin, admin, user, staff
   is_active     Boolean  @default(true)
   refresh_token String?
+  embassy_id    String   // Added: Every user must belong to an embassy
 
   // Contact Information
   phone_number                     String?
@@ -52,6 +53,7 @@ model User {
   updated_at    DateTime @updatedAt
 
   // Relations
+  embassy              Embassy          @relation(fields: [embassy_id], references: [id]) // Added
   created_events       Event[]          @relation("EventCreator")
   created_publications Publication[]    @relation("PublicationCreator")
   assigned_tasks       Task[]           @relation("AssignedTasks")
@@ -80,6 +82,7 @@ model Embassy {
   updated_at DateTime @updatedAt
 
   // Relations
+  users        User[]        // Added: Embassy can have many users
   events       Event[]
   publications Publication[]
   tasks        Task[]

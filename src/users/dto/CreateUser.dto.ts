@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 // first name, middle name, last name, email, password, role
 // is_active, phone_number, address, date_of_birth, work_phone_number
@@ -34,12 +35,16 @@ export class CreateUserDto {
     example: 'some@email.com',
     description: 'The email of the user',
   })
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
   // password of the user
   @ApiProperty({
     example: 'strongPassword123!',
     description: 'The password of the user',
   })
+  @IsString()
+  @IsNotEmpty()
   password: string;
   // role of the user
   @ApiProperty({
@@ -70,7 +75,7 @@ export class CreateUserDto {
     example: '1990-01-01',
     description: 'The date of birth of the user',
   })
-  date_of_birth: Date;
+  date_of_birth: string;
   // work phone number of the user
   @ApiProperty({
     example: '+0987654321',
@@ -126,7 +131,7 @@ export class CreateUserDto {
     description: 'The hire date of the user',
     required: false,
   })
-  hire_date?: Date;
+  hire_date?: string;
   // biography of the user
   @ApiProperty({
     example: 'Experienced professional with 10+ years in the industry',
@@ -189,5 +194,7 @@ export class CreateUserDto {
     description: 'The embassy ID associated with the user',
     required: false,
   })
-  embassy_id: number;
+  @IsString()
+  @IsNotEmpty()
+  embassy_id: string;
 }

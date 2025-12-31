@@ -16,26 +16,7 @@ const prisma = new PrismaClient({ adapter: adapter as any });
 async function main() {
   console.log('Seeding database...');
 
-  // Hash the super user password
-  const hashedPassword = await bcrypt.hash('embassysuper123', 10);
-
-  // Create super user
-  const superUser = await prisma.user.upsert({
-    where: { email: 'embassysuper@email.com' },
-    update: {},
-    create: {
-      email: 'embassysuper@email.com',
-      password: hashedPassword,
-      first_name: 'Embassy',
-      last_name: 'Super Admin',
-      role: 'super_admin',
-      is_active: true,
-    },
-  });
-
-  console.log('Super user created:', superUser.email);
-
-  // Create a sample embassy (only if it doesn't exist)
+  // Create a sample embassy first (only if it doesn't exist)
   const existingEmbassy = await prisma.embassy.findFirst({
     where: { name: 'Main Embassy' },
   });
@@ -58,6 +39,26 @@ async function main() {
     embassy = existingEmbassy;
     console.log('Sample embassy already exists:', embassy.name);
   }
+
+  // Hash the super user password
+  const hashedPassword = await bcrypt.hash('embassysuper123', 10);
+
+  // Create super user
+  const superUser = await prisma.user.upsert({
+    where: { email: 'embassysuper@email.com' },
+    update: {},
+    create: {
+      email: 'embassysuper@email.com',
+      password: hashedPassword,
+      first_name: 'Embassy',
+      last_name: 'Super Admin',
+      role: 'super_admin',
+      is_active: true,
+      embassy_id: embassy.id,
+    },
+  });
+
+  console.log('Super user created:', superUser.email);
   console.log('✅ Seeding completed successfully!');
 }
 

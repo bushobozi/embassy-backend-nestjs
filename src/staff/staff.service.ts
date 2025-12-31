@@ -277,6 +277,7 @@ export class StaffService {
           last_name: createStaffDto.last_name,
           role: 'staff',
           is_active: true,
+          embassy_id: embassy_id,
           phone_number: createStaffDto.phone_number || null,
           address: createStaffDto.address || null,
           date_of_birth: createStaffDto.date_of_birth || null,
@@ -622,7 +623,7 @@ export class StaffService {
     return this.update(id, {
       embassy_id,
       is_transferred: true,
-      transfer_date: new Date().toISOString(),
+      transfer_date: new Date().toISOString().split('T')[0],
       transfer_reason: reason,
     });
   }

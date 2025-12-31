@@ -38,7 +38,7 @@ export class CreateStaffDto {
     example: '1990-05-15',
     description: 'The date of birth of the staff member',
   })
-  date_of_birth: Date;
+  date_of_birth: string;
 
   @ApiProperty({
     example: 'Software Engineer',
@@ -102,7 +102,7 @@ export class CreateStaffDto {
     example: '2024-01-10',
     description: 'The date when the staff member was hired',
   })
-  hired_date: Date;
+  hired_date: string;
 
   @ApiProperty({
     example: 'MBA, PMP Certification',
@@ -188,13 +188,13 @@ export class CreateStaffDto {
     example: '2020-01-01',
     description: 'The issue date of the identification document',
   })
-  id_issue_date: Date;
+  id_issue_date: string;
 
   @ApiProperty({
     example: '2030-01-01',
     description: 'The expiry date of the identification document',
   })
-  id_expiry_date: Date;
+  id_expiry_date: string;
 
   @ApiProperty({
     example: 'USA',
@@ -222,7 +222,7 @@ export class CreateStaffDto {
     description: 'The date when the staff member was transferred',
     required: false,
   })
-  transfer_date?: Date;
+  transfer_date?: string;
 
   @ApiProperty({
     example: 'Department restructuring',

@@ -17,7 +17,7 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { email, password, first_name, last_name } = registerDto;
+    const { email, password, first_name, last_name, embassy_id } = registerDto;
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -40,6 +40,7 @@ export class AuthService {
         last_name,
         role: 'user', // Default role
         is_active: true,
+        embassy_id,
       },
     });
 
@@ -59,7 +60,7 @@ export class AuthService {
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
-        embassy_id: null, // Regular users don't have embassy_id until they become staff
+        embassy_id: user.embassy_id,
       },
       ...tokens,
     };
@@ -68,16 +69,9 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find user by email with staff profile to get embassy_id
+    // Find user by email
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: {
-        staff_profile: {
-          select: {
-            embassy_id: true,
-          },
-        },
-      },
     });
 
     if (!user) {
@@ -112,7 +106,7 @@ export class AuthService {
         first_name: user.first_name,
         last_name: user.last_name,
         role: user.role,
-        embassy_id: user.staff_profile?.embassy_id || null,
+        embassy_id: user.embassy_id,
       },
       ...tokens,
     };

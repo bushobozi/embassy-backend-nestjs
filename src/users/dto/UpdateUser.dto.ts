@@ -1,6 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { CreateUserDto } from './CreateUser.dto';
 
-export class UpdateUserDto {
+export class UpdateUserDto extends PartialType(CreateUserDto) {
   // first name of the user
   @ApiPropertyOptional({
     example: 'John',
@@ -60,7 +61,7 @@ export class UpdateUserDto {
     example: '1990-01-01',
     description: 'The date of birth of the user',
   })
-  date_of_birth?: Date;
+  date_of_birth?: string;
   // work phone number of the user
   @ApiPropertyOptional({
     example: '+0987654321',
@@ -108,7 +109,7 @@ export class UpdateUserDto {
     example: '2024-01-15',
     description: 'The hire date of the user',
   })
-  hire_date?: Date;
+  hire_date?: string;
   // biography of the user
   @ApiPropertyOptional({
     example: 'Experienced professional with 10+ years in the industry',
@@ -163,5 +164,5 @@ export class UpdateUserDto {
     example: 1,
     description: 'The embassy ID associated with the user',
   })
-  embassy_id?: number;
+  embassy_id?: string;
 }
