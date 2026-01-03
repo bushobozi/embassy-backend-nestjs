@@ -14,7 +14,7 @@ export class StaffService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(queryParams?: QueryStaffDto) {
-    const where: any = {};
+    const where: Prisma.StaffWhereInput = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
@@ -417,7 +417,7 @@ export class StaffService {
     };
 
     // Map DTO fields to schema fields
-    const dataToUpdate: any = {};
+    const dataToUpdate: Prisma.StaffUpdateInput = {};
 
     if (updateStaffDto.first_name !== undefined) {
       dataToUpdate.first_name = updateStaffDto.first_name;
@@ -532,7 +532,7 @@ export class StaffService {
         typeof updateStaffDto.photo === 'string' ? updateStaffDto.photo : null;
     }
     if (updateStaffDto.embassy_id !== undefined) {
-      dataToUpdate.embassy_id = updateStaffDto.embassy_id;
+      dataToUpdate.embassy = { connect: { id: updateStaffDto.embassy_id } };
     }
 
     const staff = await this.prisma.staff.update({
@@ -633,7 +633,7 @@ export class StaffService {
 
   // Statistics
   async getStats(embassy_id?: string) {
-    const where: any = {};
+    const where: Prisma.StaffWhereInput = {};
 
     if (embassy_id !== undefined) {
       where.embassy_id = embassy_id;
