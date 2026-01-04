@@ -11,7 +11,6 @@ import {
 } from '@nestjs/graphql';
 import { Public } from '../auth/decorators/public.decorator';
 import { EventsService } from './events.service';
-import { Event as PrismaEvent } from '@prisma/client';
 
 @ObjectType()
 export class Event {
@@ -118,8 +117,10 @@ export class EventsResolver {
     is_public?: boolean,
     @Args('event_type', { type: () => String, nullable: true })
     event_type?: string,
-    @Args('page', { type: () => Number, nullable: true, defaultValue: 1 }) page: number = 1,
-    @Args('limit', { type: () => Number, nullable: true, defaultValue: 25 }) limit: number = 25,
+    @Args('page', { type: () => Number, nullable: true, defaultValue: 1 })
+    page: number = 1,
+    @Args('limit', { type: () => Number, nullable: true, defaultValue: 25 })
+    limit: number = 25,
   ): Promise<PaginatedEvents> {
     const events = await this.eventsService.findAll({
       embassy_id,
