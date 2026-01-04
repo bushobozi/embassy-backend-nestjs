@@ -258,7 +258,7 @@ export class TasksService {
   }
 
   // Statistics
-  async getStats(embassy_id?: number, assigned_to?: number) {
+  async getStats(embassy_id?: string, assigned_to?: string) {
     const where: {
       embassy_id?: string;
       assigned_to?: string;

@@ -1,7 +1,14 @@
 // tasks resolver.ts
 
-import { Resolver, Query, ObjectType, Field, ID } from '@nestjs/graphql';
-
+import {
+  Resolver,
+  Query,
+  ObjectType,
+  Field,
+  ID,
+  GraphQLISODateTime,
+} from '@nestjs/graphql';
+import { Public } from '../auth/decorators/public.decorator';
 import { TasksService } from './tasks.service';
 import { Task as PrismaTask } from '@prisma/client';
 
@@ -11,25 +18,44 @@ export class Task {
   id: string;
 
   @Field()
+  embassy_id: string;
+
+  @Field()
   title: string;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field()
-  completed: boolean;
+  assigned_to: string;
 
   @Field()
-  createdAt: Date;
+  status: string;
 
   @Field()
-  updatedAt: Date;
+  priority: string;
+
+  @Field()
+  is_urgent: boolean;
+
+  @Field(() => GraphQLISODateTime)
+  due_date: Date;
+
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  completed_at: Date;
+
+  @Field(() => GraphQLISODateTime)
+  created_at: Date;
+
+  @Field(() => GraphQLISODateTime)
+  updated_at: Date;
 }
 
 @Resolver(() => Task)
 export class TasksResolver {
   constructor(private readonly tasksService: TasksService) {}
 
+  @Public()
   @Query(() => [Task], { name: 'tasks' })
   async getTasks(): Promise<PrismaTask[]> {
     const result = await this.tasksService.findAll();

@@ -12,7 +12,14 @@ export class EventsService {
 
   async findAll(queryParams?: QueryEventsDto) {
     // Build the where clause based on query parameters
-    const where: any = {};
+    const where: {
+      embassy_id?: string;
+      is_active?: boolean;
+      is_virtual?: boolean;
+      is_paid?: boolean;
+      is_public?: boolean;
+      event_type?: string;
+    } = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
@@ -55,15 +62,21 @@ export class EventsService {
         select: {
           id: true,
           embassy_id: true,
-          title: true,
-          description: true,
-          event_date: true,
-          location: true,
+          event_name: true,
+          event_description: true,
+          event_start_date: true,
+          event_end_date: true,
+          event_image: true,
+          event_location: true,
           is_active: true,
           is_virtual: true,
           is_paid: true,
           is_public: true,
+          is_private: true,
           event_type: true,
+          event_cost: true,
+          max_attendees: true,
+          registration_deadline: true,
           created_by: true,
           created_at: true,
           updated_at: true,
@@ -91,15 +104,21 @@ export class EventsService {
       select: {
         id: true,
         embassy_id: true,
-        title: true,
-        description: true,
-        event_date: true,
-        location: true,
+        event_name: true,
+        event_description: true,
+        event_start_date: true,
+        event_end_date: true,
+        event_image: true,
+        event_location: true,
         is_active: true,
         is_virtual: true,
         is_paid: true,
         is_public: true,
+        is_private: true,
         event_type: true,
+        event_cost: true,
+        max_attendees: true,
+        registration_deadline: true,
         created_by: true,
         created_at: true,
         updated_at: true,
@@ -117,32 +136,44 @@ export class EventsService {
     const event = await this.prisma.event.create({
       data: {
         embassy_id: createEventDto.embassy_id.toString(),
-        title: createEventDto.event_name,
-        description: createEventDto.event_description,
-        event_date: createEventDto.event_start_date,
-        location: createEventDto.event_location,
+        event_name: createEventDto.event_name,
+        event_description: createEventDto.event_description,
+        event_start_date: createEventDto.event_start_date,
+        event_end_date: createEventDto.event_end_date,
+        event_image: createEventDto.event_image,
+        event_location: createEventDto.event_location,
         is_active: createEventDto.is_active,
         is_virtual: createEventDto.is_virtual,
         is_paid: createEventDto.is_paid,
         is_public: createEventDto.is_public,
+        is_private: createEventDto.is_private,
         event_type: createEventDto.event_type,
+        event_cost: createEventDto.event_cost,
+        max_attendees: createEventDto.max_attendees,
+        registration_deadline: createEventDto.registration_deadline,
         created_by,
       },
       select: {
         id: true,
         embassy_id: true,
-        title: true,
-        description: true,
-        event_date: true,
-        location: true,
+        event_name: true,
+        event_description: true,
+        event_start_date: true,
+        event_end_date: true,
+        event_image: true,
+        event_location: true,
         is_active: true,
         is_virtual: true,
         is_paid: true,
         is_public: true,
+        is_private: true,
         event_type: true,
         created_by: true,
         created_at: true,
         updated_at: true,
+        event_cost: true,
+        max_attendees: true,
+        registration_deadline: true,
       },
     });
 
@@ -154,19 +185,36 @@ export class EventsService {
     await this.findOne(id);
 
     // Map DTO fields to schema fields if they exist
-    const dataToUpdate: any = {};
+    const dataToUpdate: {
+      event_name?: string;
+      event_description?: string;
+      event_start_date?: Date;
+      event_location?: string;
+      is_active?: boolean;
+      is_virtual?: boolean;
+      is_paid?: boolean;
+      is_public?: boolean;
+      is_private?: boolean;
+      event_type?: string;
+      embassy_id?: string;
+      event_end_date?: Date;
+      event_image?: string;
+      event_cost?: number;
+      max_attendees?: number;
+      registration_deadline?: Date;
+    } = {};
 
     if (updateEventDto.event_name !== undefined) {
-      dataToUpdate.title = updateEventDto.event_name;
+      dataToUpdate.event_name = updateEventDto.event_name;
     }
     if (updateEventDto.event_description !== undefined) {
-      dataToUpdate.description = updateEventDto.event_description;
+      dataToUpdate.event_description = updateEventDto.event_description;
     }
     if (updateEventDto.event_start_date !== undefined) {
-      dataToUpdate.event_date = updateEventDto.event_start_date;
+      dataToUpdate.event_start_date = updateEventDto.event_start_date;
     }
     if (updateEventDto.event_location !== undefined) {
-      dataToUpdate.location = updateEventDto.event_location;
+      dataToUpdate.event_location = updateEventDto.event_location;
     }
     if (updateEventDto.is_active !== undefined) {
       dataToUpdate.is_active = updateEventDto.is_active;
@@ -179,6 +227,9 @@ export class EventsService {
     }
     if (updateEventDto.is_public !== undefined) {
       dataToUpdate.is_public = updateEventDto.is_public;
+    }
+    if (updateEventDto.is_private !== undefined) {
+      dataToUpdate.is_private = updateEventDto.is_private;
     }
     if (updateEventDto.event_type !== undefined) {
       dataToUpdate.event_type = updateEventDto.event_type;
@@ -193,18 +244,24 @@ export class EventsService {
       select: {
         id: true,
         embassy_id: true,
-        title: true,
-        description: true,
-        event_date: true,
-        location: true,
+        event_name: true,
+        event_description: true,
+        event_start_date: true,
+        event_end_date: true,
+        event_image: true,
+        event_location: true,
         is_active: true,
         is_virtual: true,
         is_paid: true,
         is_public: true,
+        is_private: true,
         event_type: true,
         created_by: true,
         created_at: true,
         updated_at: true,
+        event_cost: true,
+        max_attendees: true,
+        registration_deadline: true,
       },
     });
 
@@ -220,10 +277,24 @@ export class EventsService {
       select: {
         id: true,
         embassy_id: true,
-        title: true,
-        description: true,
-        event_date: true,
-        location: true,
+        event_name: true,
+        event_description: true,
+        event_start_date: true,
+        event_end_date: true,
+        event_image: true,
+        event_location: true,
+        is_active: true,
+        is_virtual: true,
+        is_paid: true,
+        is_public: true,
+        is_private: true,
+        event_type: true,
+        created_by: true,
+        created_at: true,
+        updated_at: true,
+        event_cost: true,
+        max_attendees: true,
+        registration_deadline: true,
       },
     });
   }
@@ -237,7 +308,7 @@ export class EventsService {
   }
 
   async getStats(embassy_id?: number) {
-    const where: any = {};
+    const where: { embassy_id?: string } = {};
 
     if (embassy_id !== undefined) {
       where.embassy_id = embassy_id.toString();
