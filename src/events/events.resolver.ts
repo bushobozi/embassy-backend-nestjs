@@ -23,7 +23,7 @@ export class Event {
   @Field()
   event_name: string;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   event_description: string | null;
 
   @Field(() => GraphQLISODateTime)
@@ -32,10 +32,10 @@ export class Event {
   @Field(() => GraphQLISODateTime, { nullable: true })
   event_end_date: Date | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   event_image: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   event_location: string | null;
 
   @Field(() => Boolean)
@@ -53,13 +53,13 @@ export class Event {
   @Field(() => Boolean)
   is_private: boolean;
 
-  @Field({ nullable: true })
+  @Field(() => String, { nullable: true })
   event_type: string | null;
 
-  @Field({ nullable: true })
+  @Field(() => Number, { nullable: true })
   event_cost: number | null;
 
-  @Field({ nullable: true })
+  @Field(() => Number, { nullable: true })
   max_attendees: number | null;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
@@ -104,7 +104,7 @@ export class EventsResolver {
   constructor(private readonly eventsService: EventsService) {}
 
   @Public()
-  @Query(() => PaginatedEvents, { name: 'events' })
+  @Query(() => [Event], { name: 'events' })
   async getEvents(
     @Args('embassy_id', { type: () => String, nullable: true })
     embassy_id?: string,
@@ -121,7 +121,7 @@ export class EventsResolver {
     page: number = 1,
     @Args('limit', { type: () => Number, nullable: true, defaultValue: 25 })
     limit: number = 25,
-  ): Promise<PaginatedEvents> {
+  ) {
     const events = await this.eventsService.findAll({
       embassy_id,
       is_active,
@@ -132,6 +132,6 @@ export class EventsResolver {
       page,
       limit,
     });
-    return events;
+    return events.data;
   }
 }
