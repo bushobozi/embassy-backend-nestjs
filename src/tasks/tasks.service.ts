@@ -7,7 +7,14 @@ export class TasksService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(queryParams?: QueryTasksDto) {
-    const where: any = {};
+    const where: {
+      embassy_id?: string;
+      assigned_to?: string;
+      created_by?: string;
+      status?: string;
+      priority?: string;
+      is_urgent?: boolean;
+    } = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
@@ -142,7 +149,22 @@ export class TasksService {
     // Check if task exists
     await this.findOne(id);
 
-    const dataToUpdate: any = { ...updateTaskDto };
+    const dataToUpdate: Omit<
+      Partial<UpdateTaskDto>,
+      'embassy_id' | 'assigned_to' | 'created_by'
+    > & {
+      embassy_id?: string;
+      assigned_to?: string;
+      created_by?: string;
+      completed_at?: Date;
+    } = {
+      title: updateTaskDto.title,
+      description: updateTaskDto.description,
+      due_date: updateTaskDto.due_date,
+      status: updateTaskDto.status,
+      priority: updateTaskDto.priority,
+      is_urgent: updateTaskDto.is_urgent,
+    };
 
     if (updateTaskDto.embassy_id !== undefined) {
       dataToUpdate.embassy_id = updateTaskDto.embassy_id.toString();
@@ -236,8 +258,11 @@ export class TasksService {
   }
 
   // Statistics
-  async getStats(embassy_id?: number, assigned_to?: number) {
-    const where: any = {};
+  async getStats(embassy_id?: string, assigned_to?: string) {
+    const where: {
+      embassy_id?: string;
+      assigned_to?: string;
+    } = {};
 
     if (embassy_id !== undefined) {
       where.embassy_id = embassy_id.toString();

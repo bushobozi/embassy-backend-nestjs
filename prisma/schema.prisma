@@ -8,49 +8,49 @@ datasource db {
 
 // Users and Authentication
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
+  id            String  @id @default(uuid())
+  email         String  @unique
   password      String
   first_name    String?
   middle_name   String?
   last_name     String?
-  role          String   @default("user") // super_admin, admin, user, staff
-  is_active     Boolean  @default(true)
+  role          String  @default("user") // super_admin, admin, user, staff
+  is_active     Boolean @default(true)
   refresh_token String?
-  embassy_id    String   // Added: Every user must belong to an embassy
+  embassy_id    String // Added: Every user must belong to an embassy
 
   // Contact Information
-  phone_number                     String?
-  work_phone_number                String?
-  work_email                       String?
-  address                          String?
+  phone_number      String?
+  work_phone_number String?
+  work_email        String?
+  address           String?
 
   // Personal Information
   date_of_birth String?
   biography     String?
 
   // Emergency Contact
-  emergency_contact_name           String?
-  emergency_contact_phone_number   String?
-  emergency_contact_relationship   String?
+  emergency_contact_name         String?
+  emergency_contact_phone_number String?
+  emergency_contact_relationship String?
 
   // Professional Information
-  department        String?
-  position          String?
-  hire_date         DateTime?
-  profile_picture   String?
+  department      String?
+  position        String?
+  hire_date       DateTime?
+  profile_picture String?
 
   // Arrays (stored as JSON in PostgreSQL)
-  languages         String[] @default([])
-  certifications    String[] @default([])
+  languages          String[] @default([])
+  certifications     String[] @default([])
   previous_employers String[] @default([])
-  education         String[] @default([])
+  education          String[] @default([])
 
   // JSON fields
   social_media_links Json?
 
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Relations
   embassy              Embassy          @relation(fields: [embassy_id], references: [id]) // Added
@@ -82,7 +82,7 @@ model Embassy {
   updated_at DateTime @updatedAt
 
   // Relations
-  users        User[]        // Added: Embassy can have many users
+  users        User[] // Added: Embassy can have many users
   events       Event[]
   publications Publication[]
   tasks        Task[]
@@ -95,20 +95,26 @@ model Embassy {
 
 // Events
 model Event {
-  id          String   @id @default(uuid())
-  embassy_id  String
-  title       String
-  description String?
-  event_date  DateTime
-  location    String?
-  is_active   Boolean  @default(true)
-  is_virtual  Boolean  @default(false)
-  is_paid     Boolean  @default(false)
-  is_public   Boolean  @default(true)
-  event_type  String?
-  created_by  String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id                    String    @id @default(uuid())
+  embassy_id            String
+  event_name            String
+  event_description     String?
+  event_start_date      DateTime
+  event_end_date        DateTime?
+  event_image           String?
+  event_location        String?
+  is_active             Boolean   @default(true)
+  is_virtual            Boolean   @default(false)
+  is_paid               Boolean   @default(false)
+  is_public             Boolean   @default(true)
+  is_private            Boolean   @default(false)
+  event_type            String?
+  event_cost            Float?
+  max_attendees         Int?
+  registration_deadline DateTime?
+  created_by            String
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
 
   // Relations
   embassy Embassy @relation(fields: [embassy_id], references: [id])
@@ -163,13 +169,13 @@ model Task {
 
 // Staff
 model Staff {
-    id             String    @id @default(uuid())
-  user_id        String    @unique
+  id             String  @id @default(uuid())
+  user_id        String  @unique
   embassy_id     String
   first_name     String
   middle_name    String?
   last_name      String
-  email          String    @unique
+  email          String  @unique
   phone          String?
   position       String?
   department     String?
@@ -179,47 +185,47 @@ model Staff {
   country        String?
   city           String?
   nationality    String?
-  staff_status   String    @default("active") // active, inactive, on_leave, retired
-  
+  staff_status   String  @default("active") // active, inactive, on_leave, retired
+
   // Date fields
-  hire_date      DateTime?
-  date_of_birth  String?
-  
+  hire_date     DateTime?
+  date_of_birth String?
+
   // Additional contact info
-  address        String?
-  work_email     String?
-  work_phone     String?
-  
+  address    String?
+  work_email String?
+  work_phone String?
+
   // Skills and qualifications
   languages_spoken            String?
   skills                      String?
   academic_qualifications     String?
   professional_qualifications String?
-  
+
   // Emergency contact
   emergency_contact_name         String?
   emergency_contact_relationship String?
   emergency_contact_phone        String?
-  
+
   // Next of kin
   next_of_kin_name         String?
   next_of_kin_relationship String?
   next_of_kin_phone        String?
-  
+
   // ID Information
   id_type        String?
   id_number      String?
   id_issue_date  String?
   id_expiry_date String?
-  
+
   // Transfer information
   is_transferred  Boolean   @default(false)
   transfer_date   DateTime?
   transfer_reason String?
-  
+
   // Profile
   photo String?
-  
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 

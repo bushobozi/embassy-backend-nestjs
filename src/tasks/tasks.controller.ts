@@ -57,13 +57,13 @@ export class TasksController {
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter statistics by embassy ID',
   })
   @ApiQuery({
     name: 'assigned_to',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter statistics by assigned user ID',
   })
   @ApiResponse({
@@ -74,9 +74,7 @@ export class TasksController {
     @Query('embassy_id') embassy_id?: string,
     @Query('assigned_to') assigned_to?: string,
   ) {
-    const embassyIdNum = embassy_id ? parseInt(embassy_id, 10) : undefined;
-    const assignedToNum = assigned_to ? parseInt(assigned_to, 10) : undefined;
-    return this.tasksService.getStats(embassyIdNum, assignedToNum);
+    return this.tasksService.getStats(embassy_id, assigned_to);
   }
 
   @Get(':id')

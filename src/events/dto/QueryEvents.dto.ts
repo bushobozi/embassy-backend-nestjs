@@ -6,12 +6,12 @@ export class QueryEventsDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
+  @Type(() => String)
   @IsInt()
-  embassy_id?: number;
+  embassy_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by active status',

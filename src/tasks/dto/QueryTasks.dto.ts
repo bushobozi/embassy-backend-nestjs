@@ -6,32 +6,32 @@ export class QueryTasksDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  embassy_id?: number;
+  @Type(() => String)
+  @IsString()
+  embassy_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by assigned user ID',
     example: 3,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  assigned_to?: number;
+  @Type(() => String)
+  @IsString()
+  assigned_to?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by creator user ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  created_by?: number;
+  @Type(() => String)
+  @IsString()
+  created_by?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by status',

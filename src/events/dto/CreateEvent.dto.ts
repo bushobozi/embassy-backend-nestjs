@@ -90,5 +90,5 @@ export class CreateEventDto {
     example: 1,
     description: 'The embassy ID associated with the event',
   })
-  embassy_id: number;
+  embassy_id: string;
 }
