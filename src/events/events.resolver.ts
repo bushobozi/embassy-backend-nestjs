@@ -24,19 +24,19 @@ export class Event {
   event_name: string;
 
   @Field({ nullable: true })
-  event_description?: string;
+  event_description: string | null;
 
   @Field(() => GraphQLISODateTime)
   event_start_date: Date;
 
-  @Field(() => GraphQLISODateTime)
-  event_end_date: Date;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  event_end_date: Date | null;
 
   @Field({ nullable: true })
-  event_image?: string;
+  event_image: string | null;
 
   @Field({ nullable: true })
-  event_location?: string;
+  event_location: string | null;
 
   @Field(() => Boolean)
   is_active: boolean;
@@ -53,17 +53,17 @@ export class Event {
   @Field(() => Boolean)
   is_private: boolean;
 
-  @Field()
-  event_type: string;
+  @Field({ nullable: true })
+  event_type: string | null;
 
-  @Field()
-  event_cost: number;
+  @Field({ nullable: true })
+  event_cost: number | null;
 
-  @Field()
-  max_attendees: number;
+  @Field({ nullable: true })
+  max_attendees: number | null;
 
-  @Field(() => GraphQLISODateTime)
-  registration_deadline: Date;
+  @Field(() => GraphQLISODateTime, { nullable: true })
+  registration_deadline: Date | null;
 
   @Field(() => GraphQLISODateTime)
   created_at: Date;
