@@ -70,16 +70,17 @@ model User {
 
 // Embassy
 model Embassy {
-  id         String   @id @default(uuid())
-  name       String
-  country    String
-  city       String
-  address    String?
-  phone      String?
-  email      String?
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  country         String
+  city            String
+  address         String?
+  phone           String?
+  email           String?
+  embassy_picture String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
   // Relations
   users        User[] // Added: Embassy can have many users
