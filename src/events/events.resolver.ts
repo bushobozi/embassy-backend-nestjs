@@ -20,6 +20,12 @@ export class Event {
   @Field()
   embassy_id: string;
 
+  @Field(() => String, { nullable: true })
+  embassy_name: string | null;
+
+  @Field(() => String, { nullable: true })
+  embassy_picture: string;
+
   @Field()
   event_name: string;
 

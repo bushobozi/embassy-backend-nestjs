@@ -5,6 +5,19 @@ import {
   QueryEventsDto,
 } from './export-events';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+
+// Type for Event with Embassy relation
+type EventWithEmbassy = Prisma.EventGetPayload<{
+  include: {
+    embassy: {
+      select: {
+        name: true;
+        embassy_picture: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class EventsService {
@@ -59,27 +72,13 @@ export class EventsService {
         orderBy: {
           created_at: 'desc',
         },
-        select: {
-          id: true,
-          embassy_id: true,
-          event_name: true,
-          event_description: true,
-          event_start_date: true,
-          event_end_date: true,
-          event_image: true,
-          event_location: true,
-          is_active: true,
-          is_virtual: true,
-          is_paid: true,
-          is_public: true,
-          is_private: true,
-          event_type: true,
-          event_cost: true,
-          max_attendees: true,
-          registration_deadline: true,
-          created_by: true,
-          created_at: true,
-          updated_at: true,
+        include: {
+          embassy: {
+            select: {
+              name: true,
+              embassy_picture: true,
+            },
+          },
         },
       }),
       this.prisma.event.count({ where }),
@@ -87,8 +86,15 @@ export class EventsService {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Map events to include embassy_name and embassy_picture at root level
+    const mappedEvents = events.map((event: EventWithEmbassy) => ({
+      ...event,
+      embassy_name: event.embassy.name,
+      embassy_picture: event.embassy.embassy_picture,
+    }));
+
     return {
-      data: events,
+      data: mappedEvents,
       meta: {
         total,
         page,
@@ -101,34 +107,27 @@ export class EventsService {
   async findOne(id: string) {
     const event = await this.prisma.event.findUnique({
       where: { id },
-      select: {
-        id: true,
-        embassy_id: true,
-        event_name: true,
-        event_description: true,
-        event_start_date: true,
-        event_end_date: true,
-        event_image: true,
-        event_location: true,
-        is_active: true,
-        is_virtual: true,
-        is_paid: true,
-        is_public: true,
-        is_private: true,
-        event_type: true,
-        event_cost: true,
-        max_attendees: true,
-        registration_deadline: true,
-        created_by: true,
-        created_at: true,
-        updated_at: true,
+      include: {
+        embassy: {
+          select: {
+            name: true,
+            embassy_picture: true,
+          },
+        },
       },
     });
 
     if (!event) {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
-    return event;
+
+    // Map event to include embassy_name and embassy_picture at root level
+    const typedEvent = event as EventWithEmbassy;
+    return {
+      ...typedEvent,
+      embassy_name: typedEvent.embassy.name,
+      embassy_picture: typedEvent.embassy.embassy_picture,
+    };
   }
 
   async create(createEventDto: CreateEventDto, created_by: string) {

@@ -16,6 +16,7 @@ export class EmbassyService {
         address: true,
         phone: true,
         email: true,
+        embassy_picture: true,
         is_active: true,
         created_at: true,
         updated_at: true,
@@ -37,6 +38,7 @@ export class EmbassyService {
         address: true,
         phone: true,
         email: true,
+        embassy_picture: true,
         is_active: true,
         created_at: true,
         updated_at: true,
@@ -58,6 +60,7 @@ export class EmbassyService {
         address: createEmbassyDto.address,
         phone: createEmbassyDto.phone_number,
         email: createEmbassyDto.email,
+        embassy_picture: createEmbassyDto.embassy_picture,
       },
       select: {
         id: true,
@@ -67,6 +70,7 @@ export class EmbassyService {
         address: true,
         phone: true,
         email: true,
+        embassy_picture: true,
         is_active: true,
         created_at: true,
         updated_at: true,
@@ -100,6 +104,9 @@ export class EmbassyService {
     if (updateEmbassyDto.email !== undefined) {
       dataToUpdate.email = updateEmbassyDto.email;
     }
+    if (updateEmbassyDto.embassy_picture !== undefined) {
+      dataToUpdate.embassy_picture = updateEmbassyDto.embassy_picture;
+    }
 
     const embassy = await this.prisma.embassy.update({
       where: { id },
@@ -112,6 +119,7 @@ export class EmbassyService {
         address: true,
         phone: true,
         email: true,
+        embassy_picture: true,
         is_active: true,
         created_at: true,
         updated_at: true,
