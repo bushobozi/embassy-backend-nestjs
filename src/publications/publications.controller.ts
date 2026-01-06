@@ -61,7 +61,7 @@ export class PublicationsController {
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter statistics by embassy ID',
   })
   @ApiResponse({
@@ -69,8 +69,7 @@ export class PublicationsController {
     description: 'Publications statistics summary.',
   })
   getStats(@Query('embassy_id') embassy_id?: string) {
-    const embassyIdNum = embassy_id ? parseInt(embassy_id, 10) : undefined;
-    return this.publicationsService.getStats(embassyIdNum);
+    return this.publicationsService.getStats(embassy_id);
   }
 
   @Get('slug/:slug')
