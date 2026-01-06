@@ -5,13 +5,30 @@ import {
   QueryPublicationsDto,
 } from './export-publications';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+
+// Type for Event with Embassy relation
+type PublicationWithEmbassy = Prisma.PublicationGetPayload<{
+  include: {
+    embassy: {
+      select: {
+        name: true;
+        embassy_picture: true;
+      };
+    };
+  };
+}>;
 
 @Injectable()
 export class PublicationsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(queryParams?: QueryPublicationsDto) {
-    const where: any = {};
+    const where: {
+      embassy_id?: string;
+      status?: string;
+      publication_type?: string;
+    } = {};
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
@@ -39,26 +56,30 @@ export class PublicationsService {
         orderBy: {
           created_at: 'desc',
         },
-        select: {
-          id: true,
-          embassy_id: true,
-          title: true,
-          content: true,
-          publication_type: true,
-          status: true,
-          published_at: true,
-          created_by: true,
-          created_at: true,
-          updated_at: true,
+        include: {
+          embassy: {
+            select: {
+              name: true,
+              embassy_picture: true,
+            },
+          },
         },
       }),
       this.prisma.publication.count({ where }),
     ]);
 
+    const mappedPublications = publications.map(
+      (publication: PublicationWithEmbassy) => ({
+        ...publication,
+        embassy_name: publication.embassy?.name,
+        embassy_picture: publication.embassy?.embassy_picture,
+      }),
+    );
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: publications,
+      data: mappedPublications,
       meta: {
         total,
         page,
@@ -76,24 +97,37 @@ export class PublicationsService {
         embassy_id: true,
         title: true,
         content: true,
+        slug: true,
+        cover_image: true,
+        attachments: true,
+        tags: true,
         publication_type: true,
         status: true,
         published_at: true,
         created_by: true,
         created_at: true,
         updated_at: true,
+        embassy: {
+          select: {
+            name: true,
+            embassy_picture: true,
+          },
+        },
       },
     });
 
     if (!publication) {
       throw new NotFoundException(`Publication with ID ${id} not found`);
     }
-    return publication;
+
+    return {
+      ...publication,
+      embassy_name: publication.embassy?.name,
+      embassy_picture: publication.embassy?.embassy_picture,
+    };
   }
 
   async findBySlug(slug: string) {
-    // Note: The schema doesn't have a slug field, so we'll search by title
-    // If you need slug functionality, you'll need to add it to the schema
     const publication = await this.prisma.publication.findFirst({
       where: { title: slug },
       select: {
@@ -101,6 +135,10 @@ export class PublicationsService {
         embassy_id: true,
         title: true,
         content: true,
+        slug: true,
+        cover_image: true,
+        attachments: true,
+        tags: true,
         publication_type: true,
         status: true,
         published_at: true,
@@ -132,6 +170,10 @@ export class PublicationsService {
         embassy_id: true,
         title: true,
         content: true,
+        slug: true,
+        cover_image: true,
+        attachments: true,
+        tags: true,
         publication_type: true,
         status: true,
         published_at: true,
@@ -144,11 +186,18 @@ export class PublicationsService {
     return publication;
   }
 
-  async update(id: string, updatePublicationDto: Partial<UpdatePublicationDto>) {
+  async update(
+    id: string,
+    updatePublicationDto: Partial<UpdatePublicationDto>,
+  ) {
     // Check if publication exists
     await this.findOne(id);
 
-    const dataToUpdate: any = { ...updatePublicationDto };
+    const dataToUpdate: Partial<UpdatePublicationDto> & {
+      embassy_id?: string;
+      created_by?: string;
+      published_at?: Date | null;
+    } = { ...updatePublicationDto };
 
     if (updatePublicationDto.embassy_id !== undefined) {
       dataToUpdate.embassy_id = updatePublicationDto.embassy_id.toString();
@@ -174,6 +223,10 @@ export class PublicationsService {
         embassy_id: true,
         title: true,
         content: true,
+        slug: true,
+        cover_image: true,
+        attachments: true,
+        tags: true,
         publication_type: true,
         status: true,
         published_at: true,
@@ -215,8 +268,11 @@ export class PublicationsService {
     return this.update(id, { status: 'draft' });
   }
 
-  async getStats(embassy_id?: number) {
-    const where: any = {};
+  async getStats(embassy_id?: string) {
+    const where: {
+      embassy_id?: string;
+      status?: string;
+    } = {};
 
     if (embassy_id !== undefined) {
       where.embassy_id = embassy_id.toString();

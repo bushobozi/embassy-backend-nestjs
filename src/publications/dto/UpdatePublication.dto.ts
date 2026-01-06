@@ -70,12 +70,12 @@ export class UpdatePublicationDto {
     description: 'The ID of the user who created the publication',
     required: false,
   })
-  created_by?: number;
+  created_by?: string;
 
   @ApiProperty({
     example: 1,
     description: 'The embassy ID associated with the publication',
     required: false,
   })
-  embassy_id?: number;
+  embassy_id?: string;
 }

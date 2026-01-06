@@ -6,12 +6,11 @@ export class QueryPublicationsDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  embassy_id?: number;
+  @IsString()
+  embassy_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by status (draft, published, archived)',

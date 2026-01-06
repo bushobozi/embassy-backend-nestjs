@@ -77,11 +77,11 @@ export class CreatePublicationDto {
     example: 1,
     description: 'The ID of the user who created the publication',
   })
-  created_by: number;
+  created_by: string;
 
   @ApiProperty({
     example: 1,
     description: 'The embassy ID associated with the publication',
   })
-  embassy_id: number;
+  embassy_id: string;
 }

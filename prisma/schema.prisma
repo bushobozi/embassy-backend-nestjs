@@ -128,10 +128,14 @@ model Event {
 model Publication {
   id               String    @id @default(uuid())
   embassy_id       String
+  cover_image      String?
   title            String
+  slug             String
   content          String
   publication_type String?
-  status           String    @default("draft") // draft, published, archived
+  status           String    @default("draft")
+  tags             String[]  @default([])
+  attachments      String[]  @default([])
   published_at     DateTime?
   created_by       String
   created_at       DateTime  @default(now())
