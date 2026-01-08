@@ -146,7 +146,7 @@ export class AppController {
 </head>
 <body>
     <div class="login-container">
-        <h1>Embassy APIs</h1>
+        <h1>Super APIs</h1>
         <p class="subtitle">Sign in to access api</p>
 
         <div class="error-message" id="errorMessage"></div>

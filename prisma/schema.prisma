@@ -83,13 +83,14 @@ model Embassy {
   updated_at      DateTime @updatedAt
 
   // Relations
-  users        User[] // Added: Embassy can have many users
-  events       Event[]
-  publications Publication[]
-  tasks        Task[]
-  staff        Staff[]
-  chatrooms    Chatroom[]
-  emails       Email[]
+  users             User[] // Added: Embassy can have many users
+  events            Event[]
+  publications      Publication[]
+  tasks             Task[]
+  staff             Staff[]
+  chatrooms         Chatroom[]
+  emails            Email[]
+  informationBoards InformationBoard[]
 
   @@map("embassies")
 }
@@ -343,4 +344,23 @@ model Notification {
   user User @relation(fields: [user_id], references: [id])
 
   @@map("notifications")
+}
+
+model InformationBoard {
+  id          String   @id @default(uuid())
+  embassy_id  String
+  title       String
+  description String?
+  category    String?
+  image       String?
+  is_active   Boolean  @default(true)
+  location    String
+  created_by  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  embassy Embassy @relation(fields: [embassy_id], references: [id])
+
+  @@map("information_boards")
 }
