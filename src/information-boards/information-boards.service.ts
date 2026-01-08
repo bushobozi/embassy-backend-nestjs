@@ -177,4 +177,63 @@ export class InformationBoardService {
       inactiveBoards,
     };
   }
+
+  async findByLocationPublic(location: string, queryParams?: QueryBoardsDto) {
+    const where: {
+      location?: string;
+      category?: string;
+      is_active: boolean;
+    } = {
+      is_active: true, // Only return active boards for public access
+    };
+
+    if (location) {
+      where.location = location;
+    }
+
+    if (queryParams?.category) {
+      where.category = queryParams.category;
+    }
+
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const [boards, total] = await Promise.all([
+      this.prisma.informationBoard.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          created_at: 'desc',
+        },
+        include: {
+          embassy: {
+            select: {
+              name: true,
+              embassy_picture: true,
+            },
+          },
+        },
+      }),
+      this.prisma.informationBoard.count({ where }),
+    ]);
+
+    const mappedBoards = boards.map((board: BoardWithEmbassy) => ({
+      ...board,
+      embassy: board.embassy,
+    }));
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: mappedBoards,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
 }
