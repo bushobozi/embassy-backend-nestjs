@@ -15,6 +15,8 @@ import { EventsModule } from './events/events.module';
 import { MessagesModule } from './messages/messages.module';
 import { PublicationsModule } from './publications/publications.module';
 import { TasksModule } from './tasks/tasks.module';
+import { InformationBoardsModule } from './information-boards/information-boards.module';
+import { NewsModule } from './news/news.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { TasksModule } from './tasks/tasks.module';
     MessagesModule,
     PublicationsModule,
     TasksModule,
+    InformationBoardsModule,
+    NewsModule,
   ],
   controllers: [AppController],
   providers: [

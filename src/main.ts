@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
@@ -15,6 +16,17 @@ async function bootstrap() {
     bodyParser: true,
     rawBody: true,
   });
+
+  // Enable global validation pipe for DTO validation and transformation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // Enable automatic transformation
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+      whitelist: true, // Strip properties that don't have decorators
+    }),
+  );
 
   // Increase body size limit for file uploads (default is 100kb)
   // This allows up to 50MB for profile pictures and other uploads
@@ -157,6 +169,17 @@ async function getServerlessApp() {
       bodyParser: true,
       rawBody: true,
     });
+
+    // Enable global validation pipe for DTO validation and transformation
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true, // Enable automatic transformation
+        transformOptions: {
+          enableImplicitConversion: true, // Enable implicit type conversion
+        },
+        whitelist: true, // Strip properties that don't have decorators
+      }),
+    );
 
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
