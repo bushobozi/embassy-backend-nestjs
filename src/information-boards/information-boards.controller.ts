@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -27,6 +28,8 @@ import {
   QueryBoardsDto,
 } from './export-information-boards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { ApiTokenGuard } from '../common/guards/api-token.guard';
+import { PublicQueryBoardsDto } from './dto/public-query-boards.dto';
 
 @ApiTags('Information Boards')
 @ApiBearerAuth('JWT-auth')
@@ -34,7 +37,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class InformationBoardsController {
   constructor(
     private readonly informationBoardsService: InformationBoardService,
-  ) { }
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new information board' })
@@ -49,7 +52,11 @@ export class InformationBoardsController {
     @CurrentUser('embassy_id') embassyId: string,
   ) {
     const finalEmbassyId = createBoardDto.embassy_id || embassyId;
-    return this.informationBoardsService.create(createBoardDto, userId, finalEmbassyId);
+    return this.informationBoardsService.create(
+      createBoardDto,
+      userId,
+      finalEmbassyId,
+    );
   }
 
   @Get()
@@ -139,5 +146,14 @@ export class InformationBoardsController {
   @ApiResponse({ status: 404, description: 'Information Board not found.' })
   update(@Param('id') id: string, @Body() updateBoardDto: UpdateBoardDto) {
     return this.informationBoardsService.update(id, updateBoardDto);
+  }
+
+  @Get('public/location/:location')
+  @UseGuards(ApiTokenGuard)
+  async findByLocation(
+    @Param('location') location: string,
+    @Query() query: PublicQueryBoardsDto,
+  ) {
+    return this.informationBoardsService.findByLocationPublic(location, query);
   }
 }
