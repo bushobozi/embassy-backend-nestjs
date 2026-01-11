@@ -1,69 +1,94 @@
 import { ApiProperty } from '@nestjs/swagger';
-
-// title, description, due_date
-// status (pending, in_progress, completed)
-// priority (low, medium, high)
-// is_urgent
-// assigned_to - user_id
-// created_by - user_id
-// created_at, updated_at
-// belongs to embassy_id
+import {
+  IsString,
+  IsBoolean,
+  IsOptional,
+  IsNotEmpty,
+  IsDateString,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateTaskDto {
   @ApiProperty({
     example: 'Prepare quarterly report',
     description: 'The title of the task',
   })
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
   @ApiProperty({
     example: 'Compile and analyze data for the quarterly performance report.',
     description: 'A detailed description of the task',
+    required: false,
   })
-  description: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 
   @ApiProperty({
     example: '2024-07-15T17:00:00Z',
     description: 'The due date and time for the task completion',
+    required: false,
   })
-  due_date: Date;
+  @IsDateString()
+  @IsOptional()
+  due_date?: string;
 
   @ApiProperty({
     example: 'pending',
     description: 'The current status of the task',
     enum: ['pending', 'in_progress', 'completed', 'urgent'],
+    required: false,
   })
-  status: string;
+  @IsEnum(['pending', 'in_progress', 'completed', 'urgent'])
+  @IsOptional()
+  status?: string;
 
   @ApiProperty({
     example: 'medium',
     description: 'The priority level of the task',
     enum: ['low', 'medium', 'high'],
+    required: false,
   })
-  priority: string;
+  @IsEnum(['low', 'medium', 'high'])
+  @IsOptional()
+  priority?: string;
 
   @ApiProperty({
     example: false,
     description: 'Indicates if the task is marked as urgent',
     default: false,
+    required: false,
   })
-  is_urgent: boolean;
+  @IsBoolean()
+  @IsOptional()
+  is_urgent?: boolean;
 
   @ApiProperty({
-    example: 3,
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
     description: 'The ID of the user to whom the task is assigned',
+    required: false,
   })
-  assigned_to: number;
+  @IsString()
+  @IsOptional()
+  assigned_to?: string;
 
   @ApiProperty({
-    example: 1,
+    example: '1fa85f64-5717-4562-b3fc-2c963f66afa6',
     description: 'The ID of the user who created the task',
+    required: false,
   })
-  created_by: number;
+  @IsString()
+  @IsOptional()
+  created_by?: string;
 
   @ApiProperty({
-    example: 1,
+    example: '2fa85f64-5717-4562-b3fc-2c963f66afa6',
     description: 'The embassy ID associated with the task',
+    required: false,
   })
-  embassy_id: number;
+  @IsString()
+  @IsOptional()
+  embassy_id?: string;
 }

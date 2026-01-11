@@ -7,6 +7,7 @@ import {
   Field,
   ID,
   GraphQLISODateTime,
+  Args,
 } from '@nestjs/graphql';
 import { Public } from '../auth/decorators/public.decorator';
 import { TasksService } from './tasks.service';
@@ -38,7 +39,7 @@ export class Task {
   @Field()
   is_urgent: boolean;
 
-  @Field(() => GraphQLISODateTime)
+  @Field(() => GraphQLISODateTime, { nullable: true })
   due_date: Date;
 
   @Field(() => GraphQLISODateTime, { nullable: true })
@@ -57,8 +58,29 @@ export class TasksResolver {
 
   @Public()
   @Query(() => [Task], { name: 'tasks' })
-  async getTasks(): Promise<PrismaTask[]> {
-    const result = await this.tasksService.findAll();
+  async getTasks(
+    @Args('embassy_id', { type: () => String }) embassy_id: string,
+    @Args('assigned_to', { type: () => String, nullable: true })
+    assigned_to?: string,
+    @Args('status', { type: () => String, nullable: true }) status?: string,
+    @Args('priority', { type: () => String, nullable: true }) priority?: string,
+    @Args('is_urgent', { type: () => Boolean, nullable: true })
+    is_urgent?: boolean,
+    @Args('created_by', { type: () => String, nullable: true })
+    created_by?: string,
+    @Args('page', { type: () => Number, nullable: true }) page?: number,
+    @Args('limit', { type: () => Number, nullable: true }) limit?: number,
+  ): Promise<PrismaTask[]> {
+    const result = await this.tasksService.findAll({
+      embassy_id,
+      assigned_to,
+      status,
+      priority,
+      is_urgent,
+      created_by,
+      page,
+      limit,
+    });
     return result.data;
   }
 }

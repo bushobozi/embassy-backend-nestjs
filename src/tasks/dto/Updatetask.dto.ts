@@ -20,7 +20,7 @@ export class UpdateTaskDto {
     description: 'The due date and time for the task completion',
     required: false,
   })
-  due_date?: Date;
+  due_date?: string;
 
   @ApiProperty({
     example: 'pending',
@@ -50,19 +50,19 @@ export class UpdateTaskDto {
     description: 'The ID of the user to whom the task is assigned',
     required: false,
   })
-  assigned_to?: number;
+  assigned_to?: string;
 
   @ApiProperty({
     example: 1,
     description: 'The ID of the user who created the task',
     required: false,
   })
-  created_by?: number;
+  created_by?: string;
 
   @ApiProperty({
     example: 1,
     description: 'The embassy ID associated with the task',
     required: false,
   })
-  embassy_id?: number;
+  embassy_id?: string;
 }

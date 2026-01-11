@@ -18,15 +18,15 @@ export class TasksService {
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        where.embassy_id = queryParams.embassy_id.toString();
+        where.embassy_id = queryParams.embassy_id;
       }
 
       if (queryParams.assigned_to !== undefined) {
-        where.assigned_to = queryParams.assigned_to.toString();
+        where.assigned_to = queryParams.assigned_to;
       }
 
       if (queryParams.created_by !== undefined) {
-        where.created_by = queryParams.created_by.toString();
+        where.created_by = queryParams.created_by;
       }
 
       if (queryParams.status !== undefined) {
@@ -113,18 +113,36 @@ export class TasksService {
   }
 
   async create(createTaskDto: CreateTaskDto, created_by: string) {
+    const dataToCreate: {
+      title: string;
+      created_by: string;
+      status: string;
+      priority: string;
+      is_urgent: boolean;
+      embassy_id: string;
+      assigned_to: string;
+      description?: string;
+      due_date?: string;
+    } = {
+      title: createTaskDto.title,
+      created_by,
+      status: createTaskDto.status || 'pending',
+      priority: createTaskDto.priority || 'medium',
+      is_urgent: createTaskDto.is_urgent ?? false,
+      embassy_id: createTaskDto.embassy_id || '',
+      assigned_to: createTaskDto.assigned_to || '',
+    };
+
+    if (createTaskDto.description) {
+      dataToCreate.description = createTaskDto.description;
+    }
+
+    if (createTaskDto.due_date) {
+      dataToCreate.due_date = createTaskDto.due_date;
+    }
+
     const task = await this.prisma.task.create({
-      data: {
-        embassy_id: createTaskDto.embassy_id.toString(),
-        title: createTaskDto.title,
-        description: createTaskDto.description,
-        assigned_to: createTaskDto.assigned_to.toString(),
-        created_by,
-        status: createTaskDto.status || 'pending',
-        priority: createTaskDto.priority || 'medium',
-        is_urgent: createTaskDto.is_urgent || false,
-        due_date: createTaskDto.due_date,
-      },
+      data: dataToCreate,
       select: {
         id: true,
         embassy_id: true,
@@ -167,15 +185,15 @@ export class TasksService {
     };
 
     if (updateTaskDto.embassy_id !== undefined) {
-      dataToUpdate.embassy_id = updateTaskDto.embassy_id.toString();
+      dataToUpdate.embassy_id = updateTaskDto.embassy_id;
     }
 
     if (updateTaskDto.assigned_to !== undefined) {
-      dataToUpdate.assigned_to = updateTaskDto.assigned_to.toString();
+      dataToUpdate.assigned_to = updateTaskDto.assigned_to;
     }
 
     if (updateTaskDto.created_by !== undefined) {
-      dataToUpdate.created_by = updateTaskDto.created_by.toString();
+      dataToUpdate.created_by = updateTaskDto.created_by;
     }
 
     // Set completed_at if status changes to completed
@@ -265,11 +283,11 @@ export class TasksService {
     } = {};
 
     if (embassy_id !== undefined) {
-      where.embassy_id = embassy_id.toString();
+      where.embassy_id = embassy_id;
     }
 
     if (assigned_to !== undefined) {
-      where.assigned_to = assigned_to.toString();
+      where.assigned_to = assigned_to;
     }
 
     const [total, pending, inProgress, completed, low, medium, high, urgent] =
