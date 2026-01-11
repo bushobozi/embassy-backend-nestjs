@@ -253,7 +253,14 @@ async function getServerlessApp() {
       // Normalize path by removing trailing slash for comparison
       const normalizedPath = req.path.replace(/\/$/, '');
 
-      if (!normalizedPath.startsWith(swaggerFullPath)) {
+      // Only apply super_admin check to Swagger UI pages, not API endpoints
+      // Swagger UI is at exactly /api/v1 or /api/v1/
+      // API endpoints are at /api/v1/users, /api/v1/tasks, etc.
+      const isSwaggerUIPage =
+        normalizedPath === swaggerFullPath.replace(/\/$/, '');
+
+      if (!isSwaggerUIPage) {
+        // This is an API endpoint, let it through to be handled by JwtAuthGuard
         return next();
       }
 
