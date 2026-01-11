@@ -110,12 +110,27 @@ export class InformationBoardService {
     created_by: string,
     embassy_id: string,
   ) {
-    const { ...data } = createBoardDto;
+    const {
+      title,
+      category,
+      image,
+      description,
+      is_active,
+      location,
+      attachments,
+    } = createBoardDto;
+
     const newBoard = await this.prisma.informationBoard.create({
       data: {
-        ...data,
-        created_by,
-        embassy_id,
+        title,
+        ...(category && { category }),
+        ...(image && { image }),
+        ...(attachments && { attachments }),
+        ...(description && { description }),
+        is_active,
+        location,
+        embassy_id: embassy_id,
+        created_by: created_by,
       },
       select: {
         id: true,
@@ -123,6 +138,7 @@ export class InformationBoardService {
         category: true,
         image: true,
         description: true,
+        attachments: true,
         is_active: true,
         location: true,
         created_by: true,
