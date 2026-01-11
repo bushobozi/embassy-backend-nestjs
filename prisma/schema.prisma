@@ -353,6 +353,7 @@ model InformationBoard {
   description String?
   category    String?
   image       String?
+  attachments String[] @default([])
   is_active   Boolean  @default(true)
   location    String
   created_by  String
