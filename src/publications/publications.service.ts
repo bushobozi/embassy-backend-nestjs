@@ -32,7 +32,7 @@ export class PublicationsService {
 
     if (queryParams) {
       if (queryParams.embassy_id !== undefined) {
-        where.embassy_id = queryParams.embassy_id.toString();
+        where.embassy_id = queryParams.embassy_id;
       }
 
       if (queryParams.status !== undefined) {
@@ -160,7 +160,7 @@ export class PublicationsService {
     const publication = await this.prisma.publication.create({
       data: {
         ...publicationData,
-        embassy_id: embassy_id.toString(),
+        embassy_id: embassy_id,
         created_by,
         published_at:
           createPublicationDto.status === 'published' ? new Date() : null,
@@ -200,11 +200,11 @@ export class PublicationsService {
     } = { ...updatePublicationDto };
 
     if (updatePublicationDto.embassy_id !== undefined) {
-      dataToUpdate.embassy_id = updatePublicationDto.embassy_id.toString();
+      dataToUpdate.embassy_id = updatePublicationDto.embassy_id;
     }
 
     if (updatePublicationDto.created_by !== undefined) {
-      dataToUpdate.created_by = updatePublicationDto.created_by.toString();
+      dataToUpdate.created_by = updatePublicationDto.created_by;
     }
 
     // Set published_at if status changes to published
@@ -275,7 +275,7 @@ export class PublicationsService {
     } = {};
 
     if (embassy_id !== undefined) {
-      where.embassy_id = embassy_id.toString();
+      where.embassy_id = embassy_id;
     }
 
     const [total, published, draft, archived, byTypeResults] =
