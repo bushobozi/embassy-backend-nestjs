@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
 import { Multer } from 'multer';
 // title, slug, publication_type
 // content, cover_image
@@ -14,12 +15,16 @@ export class CreatePublicationDto {
     example: 'Advancements in Renewable Energy Technologies',
     description: 'The title of the publication',
   })
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
   @ApiProperty({
     example: 'advancements-in-renewable-energy-technologies',
     description: 'The slug for the publication URL',
   })
+  @IsString()
+  @IsNotEmpty()
   slug: string;
 
   @ApiProperty({
@@ -27,6 +32,8 @@ export class CreatePublicationDto {
     description:
       'The type of the publication (e.g., research_paper, article, report)',
   })
+  @IsString()
+  @IsNotEmpty()
   publication_type: string;
 
   @ApiProperty({
@@ -34,6 +41,8 @@ export class CreatePublicationDto {
       'This publication explores the latest advancements in renewable energy technologies...',
     description: 'The main content of the publication',
   })
+  @IsString()
+  @IsNotEmpty()
   content: string;
 
   @ApiProperty({
@@ -42,6 +51,8 @@ export class CreatePublicationDto {
     description: 'The cover image of the publication',
     required: false,
   })
+  @IsString()
+  @IsOptional()
   cover_image?: string;
 
   @ApiProperty({
@@ -53,6 +64,7 @@ export class CreatePublicationDto {
     description: 'Attachments related to the publication',
     required: false,
   })
+  @IsOptional()
   attachments?: Array<Multer.File>;
 
   @ApiProperty({
@@ -64,6 +76,8 @@ export class CreatePublicationDto {
     description: 'Tags associated with the publication',
     required: false,
   })
+  @IsArray()
+  @IsOptional()
   tags?: string[];
 
   @ApiProperty({
@@ -71,17 +85,23 @@ export class CreatePublicationDto {
     description:
       'The status of the publication (e.g., draft, published, archived)',
   })
+  @IsString()
+  @IsNotEmpty()
   status: string;
 
   @ApiProperty({
     example: 1,
     description: 'The ID of the user who created the publication',
   })
+  @IsString()
+  @IsNotEmpty()
   created_by: string;
 
   @ApiProperty({
     example: 1,
     description: 'The embassy ID associated with the publication',
   })
+  @IsString()
+  @IsNotEmpty()
   embassy_id: string;
 }
