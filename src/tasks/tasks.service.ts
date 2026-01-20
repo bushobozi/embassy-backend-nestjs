@@ -60,6 +60,14 @@ export class TasksService {
           title: true,
           description: true,
           assigned_to: true,
+          assigned_user: {
+            select: {
+              id: true,
+              first_name: true,
+              middle_name: true,
+              last_name: true,
+            },
+          },
           created_by: true,
           status: true,
           priority: true,

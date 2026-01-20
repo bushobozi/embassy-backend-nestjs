@@ -11,7 +11,21 @@ import {
 } from '@nestjs/graphql';
 import { Public } from '../auth/decorators/public.decorator';
 import { TasksService } from './tasks.service';
-import { Task as PrismaTask } from '@prisma/client';
+
+@ObjectType()
+class AssignedUser {
+  @Field(() => ID)
+  id: string;
+
+  @Field({ nullable: true })
+  first_name?: string;
+
+  @Field({ nullable: true })
+  middle_name?: string;
+
+  @Field({ nullable: true })
+  last_name?: string;
+}
 
 @ObjectType()
 export class Task {
@@ -29,6 +43,9 @@ export class Task {
 
   @Field()
   assigned_to: string;
+
+  @Field(() => AssignedUser)
+  assigned_user?: AssignedUser;
 
   @Field()
   status: string;
@@ -70,7 +87,7 @@ export class TasksResolver {
     created_by?: string,
     @Args('page', { type: () => Number, nullable: true }) page?: number,
     @Args('limit', { type: () => Number, nullable: true }) limit?: number,
-  ): Promise<PrismaTask[]> {
+  ) {
     const result = await this.tasksService.findAll({
       embassy_id,
       assigned_to,
