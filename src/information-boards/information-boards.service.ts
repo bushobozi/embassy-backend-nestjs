@@ -252,4 +252,58 @@ export class InformationBoardService {
       },
     };
   }
+
+  async findByCountryPublic(
+    country: string,
+    city?: string,
+    queryParams?: QueryBoardsDto,
+  ) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.InformationBoardWhereInput = {
+      is_active: true,
+      embassy: {
+        country: { equals: country, mode: 'insensitive' },
+        ...(city && { city: { equals: city, mode: 'insensitive' } }),
+      },
+    };
+
+    if (queryParams?.category) {
+      where.category = queryParams.category;
+    }
+
+    const [boards, total] = await Promise.all([
+      this.prisma.informationBoard.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          embassy: {
+            select: {
+              name: true,
+              embassy_picture: true,
+              country: true,
+              city: true,
+            },
+          },
+        },
+      }),
+      this.prisma.informationBoard.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: boards,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
 }

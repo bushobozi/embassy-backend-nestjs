@@ -38,7 +38,7 @@ async function bootstrap() {
     origin: process.env.VITE_HOSTS?.split(','),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'x-api-token'],
   });
 
   // Add global prefix for all routes except the root login page
@@ -195,7 +195,12 @@ async function getServerlessApp() {
       origin: process.env.VITE_HOSTS?.split(','),
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Accept',
+        'x-api-token',
+      ],
     });
 
     app.setGlobalPrefix('api/v1', {

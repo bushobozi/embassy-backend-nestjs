@@ -28,6 +28,7 @@ import {
   QueryBoardsDto,
 } from './export-information-boards';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { ApiTokenGuard } from '../common/guards/api-token.guard';
 import { PublicQueryBoardsDto } from './dto/public-query-boards.dto';
 
@@ -149,11 +150,50 @@ export class InformationBoardsController {
   }
 
   @Get('public/location/:location')
+  @Public()
   @UseGuards(ApiTokenGuard)
+  @ApiOperation({ summary: 'Get public information boards by location' })
+  @ApiParam({ name: 'location', description: 'Location to filter boards by' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active information boards for the specified location.',
+  })
   async findByLocation(
     @Param('location') location: string,
     @Query() query: PublicQueryBoardsDto,
   ) {
     return this.informationBoardsService.findByLocationPublic(location, query);
+  }
+
+  @Get('public/country/:country')
+  @Public()
+  @UseGuards(ApiTokenGuard)
+  @ApiOperation({
+    summary: 'Get public information boards by country and optional city',
+  })
+  @ApiParam({
+    name: 'country',
+    description: 'Country name to filter boards by (case-insensitive)',
+  })
+  @ApiQuery({
+    name: 'city',
+    required: false,
+    description: 'City name to further filter boards (case-insensitive)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'List of active information boards for the specified country/city.',
+  })
+  async findByCountry(
+    @Param('country') country: string,
+    @Query('city') city?: string,
+    @Query() query?: PublicQueryBoardsDto,
+  ) {
+    return this.informationBoardsService.findByCountryPublic(
+      country,
+      city,
+      query,
+    );
   }
 }
