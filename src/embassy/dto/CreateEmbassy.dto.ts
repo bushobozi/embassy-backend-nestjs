@@ -8,108 +8,127 @@ export class CreateEmbassyDto {
     required: false,
   })
   embassy_picture?: string;
+  
   @ApiProperty({
     example: 'Embassy of Wonderland',
     description: 'The name of the embassy',
   })
   name: string;
+  
   @ApiProperty({
     example: 'Wonderland',
     description: 'The country of the embassy',
   })
   country: string;
+  
   @ApiProperty({
     example: 'Wonderland City',
     description: 'The city of the embassy',
   })
   city: string;
+  
   @ApiProperty({
     example: '123 Embassy St',
     description: 'The address of the embassy',
+    required: false,
   })
-  address: string;
+  address?: string;
+  
   @ApiProperty({
     example: '+1234567890',
     description: 'The phone number of the embassy',
+    required: false,
   })
-  phone_number: string;
+  phone_number?: string;
+  
   @ApiProperty({
     example: 'contact@embassy.com',
     description: 'The email of the embassy',
+    required: false,
   })
-  email: string;
+  email?: string;
+  
   @ApiProperty({
     example: 'EMB123',
     description: 'The code of the embassy',
     required: false,
   })
   code?: string;
+  
   @ApiProperty({
     example: '12345',
     description: 'The postal code of the embassy',
+    required: false,
   })
-  postal_code: string;
+  postal_code?: string;
+  
   @ApiProperty({
     example: '+1234567891',
     description: 'The fax code of the embassy',
+    required: false,
   })
-  fax_code: string;
+  fax_code?: string;
+  
   @ApiProperty({
     example: '2020-01-01',
     description: 'The establishment date of the embassy',
+    required: false,
   })
-  establishment_date: Date;
-  @ApiProperty({ example: true, description: 'Is the embassy active?' })
-  is_active: boolean;
+  establishment_date?: Date;
+  
   @ApiProperty({
     example: true,
     description: 'Does the embassy provide visa services?',
+    required: false,
   })
-  provides_visa_services: boolean;
+  provides_visa_services?: boolean;
+  
   @ApiProperty({
     example: true,
     description: 'Does the embassy provide passport services?',
+    required: false,
   })
-  provides_passport_services: boolean;
+  provides_passport_services?: boolean;
+  
   @ApiProperty({
     example: true,
     description: 'Does the embassy provide consular assistance?',
+    required: false,
   })
-  provides_consular_assistance: boolean;
+  provides_consular_assistance?: boolean;
+  
   @ApiProperty({
     example: true,
     description: 'Does the embassy provide cultural exchanges?',
+    required: false,
   })
-  provides_cultural_exchanges: boolean;
+  provides_cultural_exchanges?: boolean;
+  
   @ApiProperty({
     example: 'https://facebook.com/embassy',
     description: 'The Facebook link of the embassy',
     required: false,
   })
   facebook_link?: string;
+  
   @ApiProperty({
     example: 'https://twitter.com/embassy',
     description: 'The Twitter link of the embassy',
     required: false,
   })
   twitter_link?: string;
+  
   @ApiProperty({
     example: 'https://instagram.com/embassy',
     description: 'The Instagram link of the embassy',
     required: false,
   })
   instagram_link?: string;
+  
   @ApiProperty({
     example: 'https://linkedin.com/company/embassy',
     description: 'The LinkedIn link of the embassy',
     required: false,
   })
   linkedin_link?: string;
-  @ApiProperty({
-    example: '2023-01-01',
-    description: 'The creation date of the embassy record',
-    required: false,
-  })
-  created_at?: Date;
-  updated_at?: Date;
 }

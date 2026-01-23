@@ -70,17 +70,29 @@ model User {
 
 // Embassy
 model Embassy {
-  id              String   @id @default(uuid())
-  name            String
-  country         String
-  city            String
-  address         String?
-  phone           String?
-  email           String?
-  embassy_picture String?
-  is_active       Boolean  @default(true)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id                             String   @id @default(uuid())
+  name                           String
+  country                        String
+  city                           String
+  address                        String?
+  phone                          String?
+  email                          String?
+  code                           String?
+  postal_code                    String?
+  fax_code                       String?
+  establishment_date             DateTime?
+  embassy_picture                String?
+  is_active                      Boolean  @default(true)
+  provides_visa_services         Boolean  @default(false)
+  provides_passport_services     Boolean  @default(false)
+  provides_consular_assistance   Boolean  @default(false)
+  provides_cultural_exchanges    Boolean  @default(false)
+  facebook_link                  String?
+  twitter_link                   String?
+  instagram_link                 String?
+  linkedin_link                  String?
+  created_at                     DateTime @default(now())
+  updated_at                     DateTime @updatedAt
 
   // Relations
   users             User[] // Added: Embassy can have many users
