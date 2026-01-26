@@ -268,6 +268,104 @@ export class PublicationsService {
     return this.update(id, { status: 'draft' });
   }
 
+  async findOnePublic(id: string) {
+    const publication = await this.prisma.publication.findFirst({
+      where: {
+        id,
+        status: 'published',
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
+        cover_image: true,
+        attachments: true,
+        publication_type: true,
+        tags: true,
+        published_at: true,
+        embassy: {
+          select: {
+            name: true,
+            embassy_picture: true,
+            country: true,
+            city: true,
+          },
+        },
+      },
+    });
+
+    if (!publication) {
+      throw new NotFoundException(
+        `Published publication with ID ${id} not found`,
+      );
+    }
+
+    return publication;
+  }
+
+  async findByCountryPublic(
+    country: string,
+    city?: string,
+    queryParams?: { page?: number; limit?: number; publication_type?: string },
+  ) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.PublicationWhereInput = {
+      status: 'published',
+      embassy: {
+        country: { equals: country, mode: 'insensitive' },
+        ...(city && { city: { equals: city, mode: 'insensitive' } }),
+      },
+    };
+
+    if (queryParams?.publication_type) {
+      where.publication_type = queryParams.publication_type;
+    }
+
+    const [publications, total] = await Promise.all([
+      this.prisma.publication.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { published_at: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          content: true,
+          cover_image: true,
+          publication_type: true,
+          tags: true,
+          published_at: true,
+          embassy: {
+            select: {
+              name: true,
+              embassy_picture: true,
+              country: true,
+              city: true,
+            },
+          },
+        },
+      }),
+      this.prisma.publication.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: publications,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
   async getStats(embassy_id?: string) {
     const where: {
       embassy_id?: string;

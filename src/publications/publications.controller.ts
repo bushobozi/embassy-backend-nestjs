@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,6 +26,8 @@ import {
   QueryPublicationsDto,
 } from './export-publications';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
+import { ApiTokenGuard } from '../common/guards/api-token.guard';
 
 @ApiTags('Publications')
 @ApiBearerAuth('JWT-auth')
@@ -158,5 +161,68 @@ export class PublicationsController {
   @ApiResponse({ status: 404, description: 'Publication not found.' })
   draft(@Param('id') id: string) {
     return this.publicationsService.draft(id);
+  }
+
+  @Get('public/:id')
+  @Public()
+  @UseGuards(ApiTokenGuard)
+  @ApiOperation({ summary: 'Get a single published publication by ID' })
+  @ApiParam({ name: 'id', description: 'The ID of the publication' })
+  @ApiResponse({
+    status: 200,
+    description: 'The published publication details.',
+  })
+  @ApiResponse({ status: 404, description: 'Published publication not found.' })
+  findOnePublic(@Param('id') id: string) {
+    return this.publicationsService.findOnePublic(id);
+  }
+
+  @Get('public/country/:country')
+  @Public()
+  @UseGuards(ApiTokenGuard)
+  @ApiOperation({
+    summary: 'Get published publications by country and optional city',
+  })
+  @ApiParam({
+    name: 'country',
+    description: 'Country name to filter publications by (case-insensitive)',
+  })
+  @ApiQuery({
+    name: 'city',
+    required: false,
+    description: 'City name to further filter publications (case-insensitive)',
+  })
+  @ApiQuery({
+    name: 'publication_type',
+    required: false,
+    description: 'Filter by publication type',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 5)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'List of published publications for the specified country/city.',
+  })
+  async findByCountryPublic(
+    @Param('country') country: string,
+    @Query('city') city?: string,
+    @Query('publication_type') publication_type?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.publicationsService.findByCountryPublic(country, city, {
+      page,
+      limit,
+      publication_type,
+    });
   }
 }
