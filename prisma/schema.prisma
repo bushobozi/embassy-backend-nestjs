@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider     = "postgresql"
+  relationMode = "prisma"
 }
 
 // Users and Authentication
@@ -65,34 +66,37 @@ model User {
   chat_messages        ChatMessage[]
   notifications        Notification[]
 
+  @@index([embassy_id])
+  @@index([role])
+  @@index([is_active])
   @@map("users")
 }
 
 // Embassy
 model Embassy {
-  id                             String   @id @default(uuid())
-  name                           String
-  country                        String
-  city                           String
-  address                        String?
-  phone                          String?
-  email                          String?
-  code                           String?
-  postal_code                    String?
-  fax_code                       String?
-  establishment_date             DateTime?
-  embassy_picture                String?
-  is_active                      Boolean  @default(true)
-  provides_visa_services         Boolean  @default(false)
-  provides_passport_services     Boolean  @default(false)
-  provides_consular_assistance   Boolean  @default(false)
-  provides_cultural_exchanges    Boolean  @default(false)
-  facebook_link                  String?
-  twitter_link                   String?
-  instagram_link                 String?
-  linkedin_link                  String?
-  created_at                     DateTime @default(now())
-  updated_at                     DateTime @updatedAt
+  id                           String    @id @default(uuid())
+  name                         String
+  country                      String
+  city                         String
+  address                      String?
+  phone                        String?
+  email                        String?
+  code                         String?
+  postal_code                  String?
+  fax_code                     String?
+  establishment_date           DateTime?
+  embassy_picture              String?
+  is_active                    Boolean   @default(true)
+  provides_visa_services       Boolean   @default(false)
+  provides_passport_services   Boolean   @default(false)
+  provides_consular_assistance Boolean   @default(false)
+  provides_cultural_exchanges  Boolean   @default(false)
+  facebook_link                String?
+  twitter_link                 String?
+  instagram_link               String?
+  linkedin_link                String?
+  created_at                   DateTime  @default(now())
+  updated_at                   DateTime  @updatedAt
 
   // Relations
   users             User[] // Added: Embassy can have many users
@@ -134,6 +138,9 @@ model Event {
   embassy Embassy @relation(fields: [embassy_id], references: [id])
   creator User    @relation("EventCreator", fields: [created_by], references: [id])
 
+  @@index([embassy_id])
+  @@index([is_active])
+  @@index([event_start_date])
   @@map("events")
 }
 
@@ -158,6 +165,9 @@ model Publication {
   embassy Embassy @relation(fields: [embassy_id], references: [id])
   creator User    @relation("PublicationCreator", fields: [created_by], references: [id])
 
+  @@index([embassy_id])
+  @@index([status])
+  @@index([publication_type])
   @@map("publications")
 }
 
@@ -182,6 +192,10 @@ model Task {
   assigned_user User    @relation("AssignedTasks", fields: [assigned_to], references: [id])
   creator       User    @relation("CreatedTasks", fields: [created_by], references: [id])
 
+  @@index([embassy_id])
+  @@index([status])
+  @@index([assigned_to])
+  @@index([due_date])
   @@map("tasks")
 }
 
@@ -251,6 +265,9 @@ model Staff {
   user    User    @relation(fields: [user_id], references: [id])
   embassy Embassy @relation(fields: [embassy_id], references: [id])
 
+  @@index([embassy_id])
+  @@index([staff_status])
+  @@index([department])
   @@map("staff")
 }
 
@@ -269,6 +286,7 @@ model Chatroom {
   members  ChatroomMember[]
   messages ChatMessage[]
 
+  @@index([embassy_id])
   @@map("chatrooms")
 }
 
@@ -283,6 +301,7 @@ model ChatroomMember {
   user     User     @relation(fields: [user_id], references: [id])
 
   @@unique([chatroom_id, user_id])
+  @@index([user_id])
   @@map("chatroom_members")
 }
 
@@ -300,6 +319,8 @@ model ChatMessage {
   chatroom Chatroom @relation(fields: [chatroom_id], references: [id], onDelete: Cascade)
   sender   User     @relation(fields: [sender_id], references: [id])
 
+  @@index([chatroom_id])
+  @@index([created_at])
   @@map("chat_messages")
 }
 
@@ -322,6 +343,9 @@ model Email {
   sender     User             @relation("EmailSender", fields: [sender_id], references: [id])
   recipients EmailRecipient[]
 
+  @@index([embassy_id])
+  @@index([sender_id])
+  @@index([status])
   @@map("emails")
 }
 
@@ -337,6 +361,8 @@ model EmailRecipient {
   user  User  @relation(fields: [user_id], references: [id])
 
   @@unique([email_id, user_id])
+  @@index([user_id])
+  @@index([is_read])
   @@map("email_recipients")
 }
 
@@ -355,6 +381,8 @@ model Notification {
   // Relations
   user User @relation(fields: [user_id], references: [id])
 
+  @@index([user_id])
+  @@index([is_read])
   @@map("notifications")
 }
 
@@ -375,5 +403,8 @@ model InformationBoard {
   // Relations
   embassy Embassy @relation(fields: [embassy_id], references: [id])
 
+  @@index([embassy_id])
+  @@index([is_active])
+  @@index([location])
   @@map("information_boards")
 }

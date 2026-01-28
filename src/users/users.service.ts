@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto } from './export-users';
+import { CreateUserDto, UpdateUserDto, QueryUsersDto } from './export-users';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -40,10 +40,51 @@ export class UsersService {
     updated_at: true,
   };
 
-  async findAll() {
-    return this.prisma.user.findMany({
-      select: this.userSelect,
-    });
+  async findAll(queryParams?: QueryUsersDto) {
+    const where: {
+      embassy_id?: string;
+      role?: string;
+      is_active?: boolean;
+    } = {};
+
+    if (queryParams) {
+      if (queryParams.embassy_id !== undefined) {
+        where.embassy_id = queryParams.embassy_id;
+      }
+      if (queryParams.role !== undefined) {
+        where.role = queryParams.role;
+      }
+      if (queryParams.is_active !== undefined) {
+        where.is_active = queryParams.is_active;
+      }
+    }
+
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: this.userSelect,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: string) {
@@ -117,59 +158,146 @@ export class UsersService {
     return user;
   }
 
-  async findByEmbassy(embassyId: string) {
-    return this.prisma.user.findMany({
-      where: {
-        embassy_id: embassyId,
+  async findByEmbassy(embassyId: string, queryParams?: { page?: number; limit?: number }) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const where = { embassy_id: embassyId };
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: this.userSelect,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
       },
-      select: this.userSelect,
-    });
+    };
   }
 
-  async findByRole(role: string) {
-    const users = await this.prisma.user.findMany({
-      where: { role },
-      select: this.userSelect,
-    });
+  async findByRole(role: string, queryParams?: { page?: number; limit?: number }) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
 
-    return users;
-  }
+    const where = { role };
 
-  async findActive() {
-    const users = await this.prisma.user.findMany({
-      where: { is_active: true },
-      select: this.userSelect,
-    });
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: this.userSelect,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
 
-    return users;
-  }
+    const totalPages = Math.ceil(total / limit);
 
-  async findByDepartment(department: string) {
-    // Find staff members in this department, then get their users
-    const staff = await this.prisma.staff.findMany({
-      where: {
-        department,
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            first_name: true,
-            last_name: true,
-            role: true,
-            is_active: true,
-            created_at: true,
-            updated_at: true,
+    };
+  }
+
+  async findActive(queryParams?: { page?: number; limit?: number }) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const where = { is_active: true };
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: this.userSelect,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
+  }
+
+  async findByDepartment(department: string, queryParams?: { page?: number; limit?: number }) {
+    const page = Number(queryParams?.page) || 1;
+    const limit = Number(queryParams?.limit) || 25;
+    const skip = (page - 1) * limit;
+
+    const where = { department };
+
+    const [staff, total] = await Promise.all([
+      this.prisma.staff.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              first_name: true,
+              last_name: true,
+              role: true,
+              is_active: true,
+              created_at: true,
+              updated_at: true,
+            },
           },
         },
-      },
-    });
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.staff.count({ where }),
+    ]);
 
-    return staff.map((s) => ({
+    const users = staff.map((s) => ({
       ...s.user,
       embassy_id: s.embassy_id,
     }));
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {

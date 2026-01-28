@@ -5,7 +5,7 @@ export class CreateNotificationDto {
     example: 1,
     description: 'The ID of the user receiving the notification',
   })
-  user_id: number;
+  user_id: string;
 
   @ApiProperty({
     example: 'New message received',

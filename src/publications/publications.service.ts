@@ -19,8 +19,47 @@ type PublicationWithEmbassy = Prisma.PublicationGetPayload<{
   };
 }>;
 
+// Simple in-memory cache with TTL
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+class SimpleCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private defaultTTL = 60000; // 60 seconds default
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data as T;
+  }
+
+  set<T>(key: string, data: T, ttl = this.defaultTTL): void {
+    this.cache.set(key, { data, expiry: Date.now() + ttl });
+  }
+
+  invalidate(pattern?: string): void {
+    if (!pattern) {
+      this.cache.clear();
+      return;
+    }
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
 @Injectable()
 export class PublicationsService {
+  private cache = new SimpleCache();
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(queryParams?: QueryPublicationsDto) {
@@ -183,6 +222,7 @@ export class PublicationsService {
       },
     });
 
+    this.cache.invalidate(); // Clear cache on create
     return publication;
   }
 
@@ -236,6 +276,7 @@ export class PublicationsService {
       },
     });
 
+    this.cache.invalidate(); // Clear cache on update
     return publication;
   }
 
@@ -243,7 +284,7 @@ export class PublicationsService {
     // Check if publication exists
     await this.findOne(id);
 
-    return this.prisma.publication.delete({
+    const deleted = await this.prisma.publication.delete({
       where: { id },
       select: {
         id: true,
@@ -254,6 +295,9 @@ export class PublicationsService {
         status: true,
       },
     });
+
+    this.cache.invalidate(); // Clear cache on delete
+    return deleted;
   }
 
   async publish(id: string) {
@@ -269,6 +313,10 @@ export class PublicationsService {
   }
 
   async findOnePublic(id: string) {
+    const cacheKey = `public:publication:${id}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const publication = await this.prisma.publication.findFirst({
       where: {
         id,
@@ -301,6 +349,7 @@ export class PublicationsService {
       );
     }
 
+    this.cache.set(cacheKey, publication, 60000); // Cache for 1 minute
     return publication;
   }
 
@@ -311,6 +360,11 @@ export class PublicationsService {
   ) {
     const page = Number(queryParams?.page) || 1;
     const limit = Number(queryParams?.limit) || 5;
+    const cacheKey = `public:country:${country}:${city || ''}:${queryParams?.publication_type || ''}:${page}:${limit}`;
+
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const skip = (page - 1) * limit;
 
     const where: Prisma.PublicationWhereInput = {
@@ -355,7 +409,7 @@ export class PublicationsService {
 
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    const result = {
       data: publications,
       meta: {
         total,
@@ -364,9 +418,16 @@ export class PublicationsService {
         totalPages,
       },
     };
+
+    this.cache.set(cacheKey, result, 60000); // Cache for 1 minute
+    return result;
   }
 
   async getStats(embassy_id?: string) {
+    const cacheKey = `stats:${embassy_id || 'all'}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const where: {
       embassy_id?: string;
       status?: string;
@@ -400,12 +461,15 @@ export class PublicationsService {
       }
     });
 
-    return {
+    const result = {
       total,
       published,
       draft,
       archived,
       byType,
     };
+
+    this.cache.set(cacheKey, result, 120000); // Cache for 2 minutes
+    return result;
   }
 }

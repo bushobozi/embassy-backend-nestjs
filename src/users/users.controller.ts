@@ -60,26 +60,43 @@ export class UsersController {
     required: false,
     description: 'Filter by active status',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default: 25)',
+  })
   @ApiResponse({ status: 200, description: 'Return all users.' })
   findAll(
     @Query('embassy_id') embassyId?: string,
     @Query('role') role?: string,
     @Query('department') department?: string,
     @Query('active') active?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
+    const paginationParams = {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    };
+
     if (embassyId) {
-      return this.usersService.findByEmbassy(embassyId);
+      return this.usersService.findByEmbassy(embassyId, paginationParams);
     }
     if (role) {
-      return this.usersService.findByRole(role);
+      return this.usersService.findByRole(role, paginationParams);
     }
     if (department) {
-      return this.usersService.findByDepartment(department);
+      return this.usersService.findByDepartment(department, paginationParams);
     }
     if (active === 'true') {
-      return this.usersService.findActive();
+      return this.usersService.findActive(paginationParams);
     }
-    return this.usersService.findAll();
+    return this.usersService.findAll(paginationParams);
   }
 
   @Get('stats')

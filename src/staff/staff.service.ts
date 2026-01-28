@@ -9,8 +9,47 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+// Simple in-memory cache with TTL
+interface CacheEntry<T> {
+  data: T;
+  expiry: number;
+}
+
+class SimpleCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private defaultTTL = 60000; // 60 seconds default
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data as T;
+  }
+
+  set<T>(key: string, data: T, ttl = this.defaultTTL): void {
+    this.cache.set(key, { data, expiry: Date.now() + ttl });
+  }
+
+  invalidate(pattern?: string): void {
+    if (!pattern) {
+      this.cache.clear();
+      return;
+    }
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
 @Injectable()
 export class StaffService {
+  private cache = new SimpleCache();
+
   constructor(private prisma: PrismaService) {}
 
   async findAll(queryParams?: QueryStaffDto) {
@@ -393,6 +432,7 @@ export class StaffService {
       return newStaff;
     });
 
+    this.cache.invalidate(); // Clear cache on create
     return result;
   }
 
@@ -584,6 +624,7 @@ export class StaffService {
       },
     });
 
+    this.cache.invalidate(); // Clear cache on update
     return staff;
   }
 
@@ -591,7 +632,7 @@ export class StaffService {
     // Check if staff exists
     await this.findOne(id);
 
-    return this.prisma.staff.delete({
+    const deleted = await this.prisma.staff.delete({
       where: { id },
       select: {
         id: true,
@@ -602,6 +643,9 @@ export class StaffService {
         email: true,
       },
     });
+
+    this.cache.invalidate(); // Clear cache on delete
+    return deleted;
   }
 
   // Status management
@@ -633,6 +677,10 @@ export class StaffService {
 
   // Statistics
   async getStats(embassy_id?: string) {
+    const cacheKey = `stats:${embassy_id || 'all'}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
     const where: Prisma.StaffWhereInput = {};
 
     if (embassy_id !== undefined) {
@@ -685,7 +733,7 @@ export class StaffService {
       }
     });
 
-    return {
+    const result = {
       total,
       byStatus: {
         active,
@@ -697,5 +745,8 @@ export class StaffService {
       byDepartment,
       transferred,
     };
+
+    this.cache.set(cacheKey, result, 120000); // Cache for 2 minutes
+    return result;
   }
 }
