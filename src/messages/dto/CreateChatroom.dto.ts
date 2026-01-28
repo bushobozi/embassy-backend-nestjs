@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
 
 export class CreateChatroomDto {
   @ApiProperty({
     example: 'Project Discussion',
     description: 'The name of the chatroom',
   })
+  @IsString()
+  @IsNotEmpty()
   name: string;
 
   @ApiProperty({
@@ -12,24 +15,32 @@ export class CreateChatroomDto {
     description: 'Description of the chatroom',
     required: false,
   })
+  @IsString()
+  @IsOptional()
   description?: string;
 
   @ApiProperty({
-    example: [1, 2, 3],
+    example: ['1', '2', '3'],
     description: 'Array of user IDs who are members of the chatroom',
-    type: [Number],
+    type: [String],
   })
-  member_ids: number[];
+  @IsArray()
+  @IsOptional()
+  member_ids?: string[];
 
   @ApiProperty({
-    example: 1,
+    example: '1',
     description: 'The ID of the user who created the chatroom',
   })
-  created_by: number;
+  @IsString()
+  @IsNotEmpty()
+  created_by: string;
 
   @ApiProperty({
-    example: 1,
+    example: '1',
     description: 'The embassy ID associated with the chatroom',
   })
-  embassy_id: number;
+  @IsString()
+  @IsNotEmpty()
+  embassy_id: string;
 }

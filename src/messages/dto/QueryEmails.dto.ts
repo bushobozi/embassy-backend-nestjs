@@ -6,32 +6,26 @@ export class QueryEmailsDto {
   @ApiPropertyOptional({
     description: 'Filter by embassy ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  embassy_id?: number;
+  embassy_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by sender ID',
     example: 1,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  sender_id?: number;
+  sender_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by receiver ID',
     example: 2,
-    type: Number,
+    type: String,
   })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  receiver_id?: number;
+  receiver_id?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by status',

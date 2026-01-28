@@ -49,26 +49,44 @@ export class MessagesController {
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter by embassy ID',
   })
   @ApiQuery({
     name: 'user_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter by user ID (chatrooms where user is a member)',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 25)',
   })
   @ApiResponse({
     status: 200,
     description: 'List of chatrooms retrieved successfully',
   })
   findAllChatrooms(
-    @Query('embassy_id') embassy_id?: number,
-    @Query('user_id') user_id?: number,
+    @Query('embassy_id') embassy_id?: string,
+    @Query('user_id') user_id?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.messagesService.findAllChatrooms(
-      embassy_id ? Number(embassy_id) : undefined,
-      user_id ? Number(user_id) : undefined,
+      embassy_id ? embassy_id : undefined,
+      user_id ? user_id : undefined,
+      {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+      },
     );
   }
 
@@ -94,7 +112,7 @@ export class MessagesController {
   })
   addMemberToChatroom(
     @Param('id') id: string,
-    @Body('user_id') userId: number,
+    @Body('user_id') userId: string,
   ) {
     return this.messagesService.addMemberToChatroom(id, userId);
   }
@@ -107,7 +125,7 @@ export class MessagesController {
   })
   removeMemberFromChatroom(
     @Param('id') id: string,
-    @Body('user_id') userId: number,
+    @Body('user_id') userId: string,
   ) {
     return this.messagesService.removeMemberFromChatroom(id, userId);
   }
@@ -132,12 +150,31 @@ export class MessagesController {
 
   @Get('chatrooms/:id/messages')
   @ApiOperation({ summary: 'Get all messages in a chatroom' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 50)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Messages retrieved successfully',
   })
-  findChatMessages(@Param('id') chatroomId: string) {
-    return this.messagesService.findChatMessages(chatroomId);
+  findChatMessages(
+    @Param('id') chatroomId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.messagesService.findChatMessages(chatroomId, {
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Patch('chat-messages/:id/read')
@@ -188,13 +225,13 @@ export class MessagesController {
   @ApiQuery({
     name: 'user_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'User ID',
   })
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter by embassy ID',
   })
   @ApiResponse({
@@ -202,12 +239,12 @@ export class MessagesController {
     description: 'Inbox emails retrieved successfully',
   })
   getInbox(
-    @Query('user_id') userId: number,
-    @Query('embassy_id') embassy_id?: number,
+    @Query('user_id') userId: string,
+    @Query('embassy_id') embassy_id?: string,
   ) {
     return this.messagesService.getInbox(
-      Number(userId),
-      embassy_id ? Number(embassy_id) : undefined,
+      userId,
+      embassy_id ? embassy_id : undefined,
     );
   }
 
@@ -216,13 +253,13 @@ export class MessagesController {
   @ApiQuery({
     name: 'user_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'User ID',
   })
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter by embassy ID',
   })
   @ApiResponse({
@@ -230,12 +267,12 @@ export class MessagesController {
     description: 'Sent emails retrieved successfully',
   })
   getSentEmails(
-    @Query('user_id') userId: number,
-    @Query('embassy_id') embassy_id?: number,
+    @Query('user_id') userId: string,
+    @Query('embassy_id') embassy_id?: string,
   ) {
     return this.messagesService.getSentEmails(
-      Number(userId),
-      embassy_id ? Number(embassy_id) : undefined,
+      userId,
+      embassy_id ? embassy_id : undefined,
     );
   }
 
@@ -244,7 +281,7 @@ export class MessagesController {
   @ApiQuery({
     name: 'user_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'User ID',
   })
   @ApiQuery({
@@ -258,12 +295,12 @@ export class MessagesController {
     description: 'Draft emails retrieved successfully',
   })
   getDrafts(
-    @Query('user_id') userId: number,
-    @Query('embassy_id') embassy_id?: number,
+    @Query('user_id') userId: string,
+    @Query('embassy_id') embassy_id?: string,
   ) {
     return this.messagesService.getDrafts(
-      Number(userId),
-      embassy_id ? Number(embassy_id) : undefined,
+      userId,
+      embassy_id ? embassy_id : undefined,
     );
   }
 
@@ -286,12 +323,12 @@ export class MessagesController {
     description: 'Archived emails retrieved successfully',
   })
   getArchivedEmails(
-    @Query('user_id') userId: number,
-    @Query('embassy_id') embassy_id?: number,
+    @Query('user_id') userId: string,
+    @Query('embassy_id') embassy_id?: string,
   ) {
     return this.messagesService.getArchivedEmails(
-      Number(userId),
-      embassy_id ? Number(embassy_id) : undefined,
+      userId,
+      embassy_id ? embassy_id : undefined,
     );
   }
 
@@ -379,7 +416,7 @@ export class MessagesController {
   @ApiQuery({
     name: 'user_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'User ID',
   })
   @ApiQuery({
@@ -388,17 +425,35 @@ export class MessagesController {
     type: Boolean,
     description: 'Filter unread notifications only',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 25)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Notifications retrieved successfully',
   })
   findUserNotifications(
-    @Query('user_id') userId: number,
+    @Query('user_id') userId: string,
     @Query('unread_only') unreadOnly?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.messagesService.findUserNotifications(
-      Number(userId),
+      userId,
       unreadOnly === 'true',
+      {
+        page: page ? Number(page) : undefined,
+        limit: limit ? Number(limit) : undefined,
+      },
     );
   }
 
@@ -418,7 +473,7 @@ export class MessagesController {
     status: 200,
     description: 'All notifications marked as read',
   })
-  markAllNotificationsAsRead(@Body('user_id') userId: number) {
+  markAllNotificationsAsRead(@Body('user_id') userId: string) {
     return this.messagesService.markAllNotificationsAsRead(userId);
   }
 
@@ -440,13 +495,13 @@ export class MessagesController {
   @ApiQuery({
     name: 'user_id',
     required: true,
-    type: Number,
+    type: String,
     description: 'User ID',
   })
   @ApiQuery({
     name: 'embassy_id',
     required: false,
-    type: Number,
+    type: String,
     description: 'Filter by embassy ID',
   })
   @ApiResponse({
@@ -454,12 +509,12 @@ export class MessagesController {
     description: 'Messaging statistics retrieved successfully',
   })
   getMessagingStats(
-    @Query('user_id') userId: number,
-    @Query('embassy_id') embassy_id?: number,
+    @Query('user_id') userId: string,
+    @Query('embassy_id') embassy_id?: string,
   ) {
     return this.messagesService.getMessagingStats(
-      Number(userId),
-      embassy_id ? Number(embassy_id) : undefined,
+      userId,
+      embassy_id ? embassy_id : undefined,
     );
   }
 }

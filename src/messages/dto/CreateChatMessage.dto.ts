@@ -28,5 +28,5 @@ export class CreateChatMessageDto {
     example: 1,
     description: 'The ID of the user sending the message',
   })
-  sender_id: number;
+  sender_id: string;
 }
